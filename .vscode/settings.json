@@ -1,6 +1,0 @@
-{
-    "files.associations": {
-        "ecgp_config.h": "c",
-        "ecgp_transport .h": "c"
-    }
-}
