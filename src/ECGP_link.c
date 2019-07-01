@@ -6,7 +6,7 @@
 
 
 
-static void link_code(u8 data)
+static void link_code(u8 data);
 /*
     功能：  将上层数据进行封装
     参数：  sec     输入数据
