@@ -15,7 +15,7 @@
 typedef  unsigned long  u32;
 typedef  unsigned short u16;
 typedef  unsigned char  u8;
-
+typedef  long     ECGP_error;
 
 #define ECGP_EMEMOUT     1   //内存越界
 
@@ -24,6 +24,8 @@ enum{
   ECGP_ENONE  = 0,
   ECGP_EMEMOUT,       //内存越界
   ECGP_EEND,          //错误的结束符   
+  ECGP_EFULL,         //缓存已满
+  ECGP_EPARA,         //输入参数错误
 }ECGP_ERROE;
 
 
