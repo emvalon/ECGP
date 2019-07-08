@@ -13,7 +13,7 @@
 
 
 
-
+#define ECGP_NET_LEN_MAX        100
 
 
 

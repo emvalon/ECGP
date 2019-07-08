@@ -16,7 +16,7 @@
 #define ECGP_LINK_RX_FIFO_LEN  4096
 #define ECGP_LINK_TX_FIFO_LEN  4096
 
-
+static u8 link_frameBuf[ECGP_LINK_LEN_MAX];
 static u16 rx_fifo_out;
 static u16 tx_fifo_in;
 
@@ -45,6 +45,9 @@ inline static void link_rx_fifo_out_increase(void)
 
 static void link_fifo_init(void)
 {
+    link_frameBuf[0]    = ECGP_END;
+    link_frameBuf[1]    = ECGP_END;
+
     ECGP_rx_fifo.in     = 0;
     ECGP_rx_fifo.out    = 0;
     ECGP_rx_fifo.full   = ECGP_FALSE;
@@ -65,42 +68,43 @@ static u8 link_tx_fifo_in_increase()
     return 0;
 }
 /*
-    功能：  写入数据到发送buffer
+    功能：  对数据编码，保存到buffer
     参数：  data    数据
-    返回：  ECGP_ENONE        写入成功
-            ECGP_EFULL        写入成功，fifo已满
-            -ECGP_EFULL       写入失败,FIFO已满
+            len     数据长度
+            index   第一个buffer的索引
+    返回:   当前buffer的索引
 */
-static ECGP_error link_writeTxfifo(u8 data)
+static u16 link_writeBuf(u8* data , u16 len ,u16 index)
 {
-    if(ECGP_tx_fifo.full){
-        return 0;
-    }
-    else{
-        if( data == ECGP_END ){
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC;
-            if( link_tx_fifo_in_increase() ){
-                return -ECGP_EFULL;
-            }
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC_END;
+    u16 i;
+
+    for(i=0; i<len; i++){
+        if( data[i] == ECGP_END ){
+            link_frameBuf[index++] = ECGP_ESC;
+            link_frameBuf[index++] = ECGP_ESC_END;
         }
-        else if( data == ECGP_ESC ){
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC;
-            if( link_tx_fifo_in_increase() ){
-                return -ECGP_EFULL;
-            }
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC_ESC;           
+        else if( data[i] == ECGP_ESC ){
+            link_frameBuf[index++] = ECGP_ESC;
+            link_frameBuf[index++] = ECGP_ESC_ESC;          
         }
         else
         {
-            ECGP_tx_fifo.buf[tx_fifo_in] = data;
+            link_frameBuf[index++] = data[i];
         }
-
-        if( link_tx_fifo_in_increase() ){
-            return ECGP_EFULL;
-        }
-        return ECGP_ENONE;
     }
+    return index;
+}
+/*
+    功能：  写入数据到发送buffer
+    参数：  len    数据长度
+    返回：  ECGP_ENONE        写入成功
+            -ECGP_EFULL       写入失败,FIFO已满
+*/
+static ECGP_error link_writeTxfifo(u16 len)
+{
+    u32 len_remain;
+    ECGP_tx_fifo.in>ECGP_tx_fifo.out? ECGP_LINK_TX_FIFO_LEN-ECGP_tx_fifo.in+ECGP_tx_fifo.out : ECGP_tx_fifo.out-ECGP_tx_fifo.in;
+
 } 
 /*
     功能：  将上层数据进行封装
@@ -109,6 +113,23 @@ static ECGP_error link_writeTxfifo(u8 data)
             len     输入数据长度
     返回：  
 */
+static ECGP_error link_frame( u8* src,  u16 len )
+{
+    u16 i,index;
+    u16 crc;
+    u8 temp[4];
+
+    crc = ECGP_crc16(src,len,LINK_CRC_INIT);
+    ECGP_SET_U16(temp,len);
+    ECGP_SET_U16(temp+2,crc);
+
+    index = link_writeBuf(temp,sizeof(temp),2);
+    index = link_writeBuf(src,len,index);
+    link_frameBuf[index++] = ECGP_END;
+
+    link_writeTxfifo(index);
+}
+
 static ECGP_error link_frame( u8* src,  u16 len )
 {
     u16 i;
