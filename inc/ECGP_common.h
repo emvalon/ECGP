@@ -17,8 +17,6 @@ typedef  unsigned short u16;
 typedef  unsigned char  u8;
 typedef  long     ECGP_error;
 
-#define ECGP_EMEMOUT     1   //内存越界
-
 
 enum{
   ECGP_ENONE  = 0,
