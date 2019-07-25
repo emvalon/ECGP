@@ -20,10 +20,13 @@ typedef  long     ECGP_error;
 
 enum{
   ECGP_ENONE  = 0,
-  ECGP_EMEMOUT,       //内存越界
-  ECGP_EEND,          //错误的结束符   
-  ECGP_EFULL,         //缓存已满
-  ECGP_EPARA,         //输入参数错误
+  ECGP_EMEMOUT,         //内存越界
+  ECGP_EEND,            //错误的结束符   
+  ECGP_EFULL,           //缓存已满
+  ECGP_EPARA,           //输入参数错误
+  ECGP_ESEQ,            //sequence error
+  ECGP_ESENDACK,        //send ack error
+  ECGP_ELENGTH,         //larger then maximum length
 }ECGP_ERROE;
 
 

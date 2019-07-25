@@ -9,6 +9,7 @@
 */
 
 #include "ECGP_link.h"
+#include "ECGP_physical.h"
 #include "ECGP_config.h"
 #include "ECGP_crc.h"
 #include "string.h"
@@ -44,10 +45,12 @@ void link_init(void)
     ECGP_rx_fifo.in     = 0;
     ECGP_rx_fifo.out    = 0;
     ECGP_rx_fifo.full   = ECGP_FALSE;
+    ECGP_rx_fifo.empty  = ECGP_FALSE;
 
     ECGP_tx_fifo.in     = 0;
     ECGP_tx_fifo.out    = 0;
     ECGP_tx_fifo.full   = ECGP_FALSE;
+    ECGP_tx_fifo.empty  = ECGP_FALSE;
 }
 
 
@@ -277,9 +280,58 @@ ECGP_error link_verfy(u8* dst, u16 len)
     return len_recv;
 }
 
+/*
+    功能：  检测发送buffer，调用phy接口发送
+    参数：  dst     保存数据的数组的地址
+            len     保存数据的数组的长度
+    返回：  0       没有数据 或 读到了fifo的末尾没有读到完整的包
+            <0      接收到错误的包
+            其他    读取的数据长度
+*/
+u16 link_sendToPhy()
+{
+    u16 len,in,out;
+    if(ECGP_tx_fifo.empty){
+        return 0;
+    }
 
+    in = ECGP_tx_fifo.in;
+    out = ECGP_tx_fifo.out; 
+    if(in > out){
+        len =  in - out;
+    }
+    else{
+        len = ECGP_LINK_TX_FIFO_LEN - out;
+    }
 
+    if(phy_send(&ECGP_tx_fifo.buf[out],len) == ECGP_ENONE ){
+        ECGP_tx_fifo.out = (out + len) % ECGP_LINK_TX_FIFO_LEN;
+        if(ECGP_tx_fifo.out == in){
+            ECGP_tx_fifo.empty = ECGP_TRUE;
+        }
+        return len;
+    }
+    return 0;
+}
 
+ECGP_error ECGP_linkSend(u8* data, u16 len)
+{
+    ECGP_error res;
+    res = link_frame(data,len);
+    if(res != ECGP_ENONE){
+        return res;
+    }
+    ECGP_physicalStartSend();
+}
+
+ECGP_error ECGP_linkRecv(u8* data, u16 len)
+{
+    ECGP_error res;
+    res = link_verfy(data,len);
+    if(res != ECGP_ENONE){
+        return res;
+    }
+}
 
 void link_test(void)
 {

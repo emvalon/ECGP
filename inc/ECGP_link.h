@@ -12,7 +12,8 @@
 #define _ECGP_LINK_H_
 
 #include "ECGP_network.h"
-#include "ECGP_common.h" 
+#include "ECGP_physical.h" 
+#include "ECGP_common.h"
 
 #define LINK_CRC_INIT         0xffffffff
 #define ECGP_LINK_LEN_MAX    (2*(ECGP_NET_LEN_MAX+4)+3)
@@ -32,11 +33,14 @@
 typedef struct {
     u16 in, out;
     ECGP_Bool full;
+    ECGP_Bool empty;
     u8* buf;
 }ECGP_Link_Fifo;
 
 
 
+ECGP_error ECGP_linkSend(u8* data, u16 len);
+ECGP_error ECGP_linkRecv(u8* data, u16 len);
 
 void link_init(void);
 void link_test(void);

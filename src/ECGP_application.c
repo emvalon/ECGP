@@ -19,8 +19,27 @@
 
 
 
-
-
+/**********************************************************************
+* Description:  Application layer send.
+* Input:        point to data buffer, buffer length
+* Return:       error code
+**********************************************************************/
+ECGP_error ECGP_send(u8* data, u16 len)
+{
+    if(len > ECGP_APPLICATION_LEN_MAX){
+        return -ECGP_ELENGTH;
+    }
+    return ECGP_presentSend(data,len);
+}
+/**********************************************************************
+* Description:  Application layer receive.
+* Input:        point to data buffer, buffer length
+* Return:       error code
+**********************************************************************/
+ECGP_error ECGP_recv(u8* data, u16 len)
+{
+    return ECGP_presentRecv(data,len);
+}
 
 
 
