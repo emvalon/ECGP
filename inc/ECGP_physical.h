@@ -15,11 +15,9 @@
 #include "ECGP_common.h" 
 
 
-ECGP_error phy_send(u8 data[] , u16 len);
 
 
-
-
+ ECGP_error ECGP_physicalSend(u8* data, u16 len);
 
 
 

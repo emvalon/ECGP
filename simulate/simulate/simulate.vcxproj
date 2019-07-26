@@ -123,6 +123,7 @@
     <ClCompile Include="..\..\src\ECGP_network.c" />
     <ClCompile Include="..\..\src\ECGP_presentation.c" />
     <ClCompile Include="..\..\src\ECGP_transport .c" />
+    <ClCompile Include="..\..\src\port\simulate.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +134,7 @@
     <ClInclude Include="..\..\inc\ECGP_crc.h" />
     <ClInclude Include="..\..\inc\ECGP_link.h" />
     <ClInclude Include="..\..\inc\ECGP_network.h" />
+    <ClInclude Include="..\..\inc\ECGP_physical.h" />
     <ClInclude Include="..\..\inc\ECGP_presentation.h" />
     <ClInclude Include="..\..\inc\ECGP_transport .h" />
   </ItemGroup>
