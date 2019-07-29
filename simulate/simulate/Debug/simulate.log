@@ -1,28 +1,2 @@
 ﻿  ECGP_link.c
-c:\git\ecgp\src\ecgp_link.c(409): error C2084: function 'void link_rx_fifo_out_increase(void)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(30): note: see previous definition of 'link_rx_fifo_out_increase'
-c:\git\ecgp\src\ecgp_link.c(416): error C2084: function 'void link_init(void)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(37): note: see previous definition of 'link_init'
-c:\git\ecgp\src\ecgp_link.c(442): error C2084: function 'u16 link_writeBuf(u8 *,u16,u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(63): note: see previous definition of 'link_writeBuf'
-c:\git\ecgp\src\ecgp_link.c(467): error C2084: function 'ECGP_error link_writeRxfifo(u8 *,u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(88): note: see previous definition of 'link_writeRxfifo'
-c:\git\ecgp\src\ecgp_link.c(481): error C2084: function 'ECGP_error link_writeTxfifo(u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(102): note: see previous definition of 'link_writeTxfifo'
-c:\git\ecgp\src\ecgp_link.c(528): error C2084: function 'ECGP_error link_frame(u8 *,u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(150): note: see previous definition of 'link_frame'
-c:\git\ecgp\src\ecgp_link.c(552): error C2084: function 'u16 link_parse(u8 *,u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(174): note: see previous definition of 'link_parse'
-c:\git\ecgp\src\ecgp_link.c(601): error C2084: function 'ECGP_error link_verfy(u8 *,u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(223): note: see previous definition of 'link_verfy'
-c:\git\ecgp\src\ecgp_link.c(666): error C2084: function 'ECGP_error link_CompleteAndResend(u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(288): note: see previous definition of 'link_CompleteAndResend'
-c:\git\ecgp\src\ecgp_link.c(714): error C2084: function 'ECGP_error ECGP_linkSend(u8 *,u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(333): note: see previous definition of 'ECGP_linkSend'
-c:\git\ecgp\src\ecgp_link.c(728): error C2084: function 'ECGP_error ECGP_linkRecv(u8 *,u16)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(343): note: see previous definition of 'ECGP_linkRecv'
-c:\git\ecgp\src\ecgp_link.c(737): error C2084: function 'void link_test(void)' already has a body
-  c:\git\ecgp\src\ecgp_link.c(352): note: see previous definition of 'link_test'
-  main.c
-  Generating Code...
-c:\git\ecgp\simulate\simulate\main.c(17): error C4700: uninitialized local variable 'p' used
+  simulate.vcxproj -> C:\git\ECGP\simulate\Debug\simulate.exe

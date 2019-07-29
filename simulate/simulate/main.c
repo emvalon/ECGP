@@ -11,33 +11,50 @@ int main()
 {
     HANDLE thread;
     u8* p;
-    int len;
+    ECGP_error res;
+
     link_init();
 
-    p[0] = 1;
-    p[1] = 2;
-    p[2] = 3;
+    p = malloc(100);
+   
    
     thread = CreateThread(NULL, 0, recv_thread, NULL, 0, NULL);
     CloseHandle(thread);
 
-    //while (1) 
+    while (1) 
     {
-        ECGP_send(p,3);
+        printf("input your message : ");
+        scanf_s("%s",p,100);
+        res = ECGP_send(p,sizeof(p));
+        if (res != ECGP_ENONE) {
+            printf("send fault :%d\n", res);
+        }
     }
     
 
 
     getch();
+    free(p);
 }
 
 
 DWORD WINAPI recv_thread(LPVOID lpParameter)
 {
-  
+    u8 *p;
+    ECGP_error res;
+    p = malloc(100);
     printf("recv_thread正在运行!\r\n");
     while (1) {
-        
+        res = ECGP_recv(p, 100);
+        if (res < 0) {
+            printf("recv error:%d\r\n", res);
+        }
+        else if(res > 0 ){
+            for (int i = 0; i < res; i++) {
+                printf("0x%02x ", p[i]);
+            }
+            printf("\n");
+        }
         Sleep(10);
     }
     

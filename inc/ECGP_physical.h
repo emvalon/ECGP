@@ -18,11 +18,11 @@
 
 
  ECGP_error ECGP_physicalSend(u8* data, u16 len);
+ ECGP_error ECGP_physicalRecv(u8* data, u16 len);
 
 
-
-
-
+ extern ECGP_error link_hasSent(u16 sendLen);
+ extern ECGP_error link_hasReceived(u16 sendLen);
 
 
 

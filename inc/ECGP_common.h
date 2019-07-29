@@ -40,10 +40,10 @@ typedef enum {
 #define ECGP_POINT_U8(d)            ((u8*)d)
 
 #define ECGP_GET_U16(a)         ( ( *ECGP_POINT_U8(a)) | (*(ECGP_POINT_U8(a)+1)<<8) )
-#define ECGP_SET_U16(a,d)       while(0){                                               \
+#define ECGP_SET_U16(a,d)       do{                                               \
                                     *ECGP_POINT_U8(a)       = d&0xffu;        \
                                     *(ECGP_POINT_U8(a)+1)   = (d>>8)&0xffu;   \
-                                }
+                                }while(0)
 
 
 

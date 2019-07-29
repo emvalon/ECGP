@@ -74,6 +74,7 @@ static ECGP_error transport_setAckWaiting(u8 seq)
     for(i=0;i<8;i++){
         if((seqGroup&temp) == 0){
             seqBitmap[i] = seq;
+            seqGroup |= temp;
             return ECGP_ENONE;
         }
         temp <<= 1;
