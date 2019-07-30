@@ -35,8 +35,8 @@ static u8 seq = 0;
 static ECGP_error transport_sendAck(u8 seq)
 {
     u8 temp[2];
-    temp[0] = seq;
-    temp[1] = 0xffu - seq;
+    temp[0] = seq|(~TRANS_SEQ_MASK);
+    temp[1] = 0xffu - temp[0];
     //send to network lager
     return ECGP_networkSend(temp,2);
 }
@@ -130,7 +130,7 @@ ECGP_error ECGP_transportRecv(u8* data, u16 len)
     // is ack
     if(trans_rx_buffer[0] & (~TRANS_SEQ_MASK)){
         if(trans_rx_buffer[0]+trans_rx_buffer[1] == 0xff){
-            transport_processAck(trans_rx_buffer[0]);
+            transport_processAck(trans_rx_buffer[0]&TRANS_SEQ_MASK);
         }
         else{
             // ignore
@@ -151,7 +151,7 @@ ECGP_error ECGP_transportRecv(u8* data, u16 len)
         return -ECGP_ESENDACK;
     }
     // copy data
-    if(readLen>len){
+    if(--readLen > len){
         readLen = len;
     }
     memcpy(data,&trans_rx_buffer[1],readLen);

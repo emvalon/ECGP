@@ -1,2 +1,8 @@
 
 \.vscode/
+
+simulate/Debug/
+
+simulate/\.vs/
+
+simulate/simulate/Debug/
