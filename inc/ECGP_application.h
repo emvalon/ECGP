@@ -21,7 +21,7 @@
 
 ECGP_error ECGP_send(u8* data, u16 len);
 ECGP_error ECGP_recv(u8* data, u16 len);
-
+ECGP_error ECGP_timeElapsed(int time);
 
 
 

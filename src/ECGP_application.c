@@ -40,6 +40,19 @@ ECGP_error ECGP_recv(u8* data, u16 len)
 {
     return ECGP_presentRecv(data,len);
 }
+/**********************************************************************
+* Description:  Application layer receive.
+* Input:        point to data buffer, buffer length
+* Return:       error code
+**********************************************************************/
+ECGP_error ECGP_timeElapsed(int time)
+{
+    return ECGP_presentElapsed(time);
+}
+
+
+
+
 
 
 

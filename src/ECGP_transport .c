@@ -16,10 +16,18 @@
 #define TRANS_SEQ_MASK          0X7Fu
 #define TRANS_CRC_INIT          0XFFFFu
 
-static u8 trans_tx_buffer[ECGP_TRANS_LEN_MAX];
+typedef struct {
+    int timeout;
+    u16 len;
+    u8 seq;
+    u8 buf[ECGP_TRANS_LEN_MAX];
+
+}TransTx_TypeDef_t;
+
 static u8 trans_rx_buffer[ECGP_TRANS_LEN_MAX];
-static u8 seqBitmap[8],seqGroup=0;
-static u8 seq = 0;
+
+static TransTx_TypeDef_t trans_tx[8];
+static u8 seqGroup=0,seq=0;
 
 
 /*
@@ -54,7 +62,7 @@ static void transport_processAck(u8 seq)
     }
     for(i=0;i<8;i++){
         if(seqGroup&temp){
-            if(seq == seqBitmap[i]){
+            if(seq == trans_tx[i].seq){
                 seqGroup ^= temp;
                 return;
             }
@@ -64,31 +72,56 @@ static void transport_processAck(u8 seq)
 }
 /**********************************************************************
 * Description:  only used by transport layer.
-                set ack waiting information.
-* Input:        sequence number
-* Return:       error code
+                get ack handle used for marking.
+* Input:        none
+* Return:       handle
 **********************************************************************/
-static ECGP_error transport_setAckWaiting(u8 seq)
+static u8 transport_getAckHandle(void)
 {
-    u8 i,temp=0x01u;
-    for(i=0;i<8;i++){
-        if((seqGroup&temp) == 0){
-            seqBitmap[i] = seq;
-            seqGroup |= temp;
-            return ECGP_ENONE;
+    u8 i;
+    u8 temp = 0x01u;
+    if (seqGroup == 0xff) {
+        return 0xff;
+    }
+    for (i = 0; i < 8; i++) {
+        if ((seqGroup&temp) == 0) {
+            break;
         }
         temp <<= 1;
     }
-    return -ECGP_ESEQ;
+    return i;
 }
-static u8 transport_getSequence(void)
+/**********************************************************************
+* Description:  only used by transport layer.
+                set ack waiting information.
+* Input:        handle,sequence number
+* Return:       none
+**********************************************************************/
+static void transport_setAckWaiting(u16 handle,u8 seq)
 {
-    if(seqGroup == 0xff){
-        return 0xff;
-    }
+    trans_tx[handle].seq = seq;
+    seqGroup |= 0x01u << handle;
+    trans_tx[handle].timeout = ECGP_TRANS_NOACK_TIMEOUT;
+}
+/**********************************************************************
+* Description:  only used by transport layer.
+                Get sequence number.
+* Input:        none
+* Return:       sequence number
+**********************************************************************/
+static u8 transport_getSequence(void)
+{ 
     return (seq++)&TRANS_SEQ_MASK;
 }
-
+/**********************************************************************
+* Description:  transport layer resend.
+* Input:        handle of resend data
+* Return:       error code
+**********************************************************************/
+static ECGP_error transport_resend(u8 handle)
+{
+    return ECGP_networkSend(trans_tx[handle].buf, trans_tx[handle].len);
+}
 /**********************************************************************
 * Description:  transport layer send.
 * Input:        point to data buffer, buffer length
@@ -96,20 +129,28 @@ static u8 transport_getSequence(void)
 **********************************************************************/
 ECGP_error ECGP_transportSend(u8* data, u16 len)
 {
+    ECGP_error res;
     u16 crc;
-    //get sequence if no full
-    trans_tx_buffer[0] = transport_getSequence();
-    if(trans_tx_buffer[0] > TRANS_SEQ_MASK){
+    u8 handle,seq;
+    handle = transport_getAckHandle();
+    if (handle >= 8) {
         return -ECGP_ESEQ;
     }
+    //get sequence if no full
+    seq = transport_getSequence();
 
-    memcpy(&trans_tx_buffer[1],data,len);
-    crc = ECGP_crc16(trans_tx_buffer,len+1,TRANS_CRC_INIT);
-    ECGP_SET_U16(&trans_tx_buffer[len+1],crc);
-    //need ack check
-    transport_setAckWaiting(trans_tx_buffer[0]);
+    trans_tx[handle].buf[0] = seq;
+    memcpy(&trans_tx[handle].buf[1],data,len);
+    crc = ECGP_crc16(trans_tx[handle].buf,len+1,TRANS_CRC_INIT);
+    ECGP_SET_U16(&trans_tx[handle].buf[len+1],crc);
+    trans_tx[handle].len = len + 3;
     //send to network lager
-    return ECGP_networkSend(trans_tx_buffer,len+3);
+    res = ECGP_networkSend(trans_tx[handle].buf, trans_tx[handle].len);
+    if (res == ECGP_ENONE) {
+        //need ack check
+        transport_setAckWaiting(handle,seq);
+    }
+    return res;
 }
 
 /**********************************************************************
@@ -147,6 +188,7 @@ ECGP_error ECGP_transportRecv(u8* data, u16 len)
         return  ECGP_transportRecv(data,len);
     }
     // send ack
+    
     if(transport_sendAck(trans_rx_buffer[0]) != ECGP_ENONE){
         return -ECGP_ESENDACK;
     }
@@ -158,8 +200,36 @@ ECGP_error ECGP_transportRecv(u8* data, u16 len)
     return readLen;
 }
 
+/**********************************************************************
+* Description:  transport time manage.
+* Input:        elapased time(ms)
+* Return:       error code
+**********************************************************************/
+ECGP_error ECGP_transportElapsed(int time)
+{
+    u8 i,temp=0x01u;
+    ECGP_error res;
 
-
+    if (seqGroup == 0) {
+        return ECGP_ENONE;
+    }
+    for (i = 0; i < 8; i++) {
+        if (seqGroup&temp) {
+            trans_tx[i].timeout -= time;
+            if (trans_tx[i].timeout <= 0) {
+                res = transport_resend(i);
+                if (res == ECGP_ENONE) {
+                    trans_tx[i].timeout = ECGP_TRANS_NOACK_TIMEOUT;
+                }
+                else {
+                    return res;
+                }
+            }
+        }
+        temp <<= 1;
+    }
+    return ECGP_ENONE;
+}
 
 
 

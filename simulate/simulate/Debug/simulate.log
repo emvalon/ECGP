@@ -1,2 +1,4 @@
-﻿  main.c
+﻿  ECGP_transport .c
+  simulate.c
+  Generating Code...
   simulate.vcxproj -> C:\git\ECGP\simulate\Debug\simulate.exe

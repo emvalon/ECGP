@@ -19,14 +19,11 @@ u16 bufLen;
  ECGP_error ECGP_physicalSend(u8* data, u16 len)
  {
     u16 l;
-    if (len > bufLen) {
 
-    }
-    else {
-        memcpy(bufData, data, len);
-        link_hasReceived(len);
-    }   
-    link_hasSent(len); 
+    l = len > bufLen ? bufLen : len;
+    memcpy(bufData, data, l);
+    link_hasReceived(l);
+    link_hasSent(l); 
  }
 
 

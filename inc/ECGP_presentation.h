@@ -19,7 +19,7 @@
 
 #define ECGP_presentSend                ECGP_transportSend
 #define ECGP_presentRecv                ECGP_transportRecv
-
+#define ECGP_presentElapsed             ECGP_transportElapsed
 //ECGP_error ECGP_presentSend(u8* data, u16 len);
 //ECGP_error ECGP_presentRecv(u8* data, u16 len);
 

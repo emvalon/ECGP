@@ -56,6 +56,10 @@ DWORD WINAPI recv_thread(LPVOID lpParameter)
             }
             printf("\n");
         }
+        res = ECGP_timeElapsed(10);
+        if (res != ECGP_ENONE) {
+            printf("time error:%d\n", res);
+        }
         Sleep(10);
     }
     

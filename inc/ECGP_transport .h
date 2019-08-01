@@ -18,10 +18,15 @@
 
 // Transport layer buffer maximum length
 #define ECGP_TRANS_LEN_MAX      (ECGP_PRESENT_LEN_MAX + 3)
+//ack timeout value(MS)
+#define ECGP_TRANS_NOACK_TIMEOUT    100
+
+
+
 
 ECGP_error ECGP_transportSend(u8* data, u16 len);
 ECGP_error ECGP_transportRecv(u8* data, u16 len);
-
+ECGP_error ECGP_transportElapsed(int time);
 
 
 
