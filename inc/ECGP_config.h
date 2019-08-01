@@ -23,7 +23,7 @@
 //#define ECGP_USE_CRC32_TABLE 
 
 
-
+#define ECGP_SENDBUF_MAX            8
 
 
 

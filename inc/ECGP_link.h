@@ -39,7 +39,7 @@ typedef struct {
 
 
 
-ECGP_error ECGP_linkSend(u8* data, u16 len);
+ECGP_error ECGP_linkSend(u16 handle, u8* data, u16 len);
 ECGP_error ECGP_linkRecv(u8* data, u16 len);
 
 void link_init(void);

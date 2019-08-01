@@ -15,15 +15,24 @@
 #include "ECGP_crc.h"
 #include "string.h"
 
+#if ECGP_SENDBUF_MAX <= 8
+static u8 bufBitmap = 0;
+#else
+#error "The buffer number is too big!"
+#endif
 
-static u8 link_frameBuf[ECGP_LINK_LEN_MAX];
+typedef struct {
+    u16 len;
+    u8 buffer[ECGP_LINK_LEN_MAX];
+}link_buffer_t;
+
+static link_buffer_t link_frameBuf[ECGP_SENDBUF_MAX];
 static u16 rx_fifo_out;
 
 
 
-static ECGP_Link_Fifo   ECGP_rx_fifo, ECGP_tx_fifo;
+static ECGP_Link_Fifo   ECGP_rx_fifo;
 static u8 _rx_fifo[ECGP_LINK_RX_FIFO_LEN];
-static u8 _tx_fifo[ECGP_LINK_TX_FIFO_LEN];
 
 
 
@@ -41,25 +50,26 @@ inline static void link_rx_fifo_out_increase(void)
 /**********************************************************************
 * Description:  only used by link layer.
                 write data into frame buffer. 
-* Input:        data pointer, data length, index of start 
-* Return:      current index
+* Input:        handle used for marking this message,data pointer, 
+                data length, index of start 
+* Return:       current index
 **********************************************************************/
-static u16 link_writeBuf(u8* data , u16 len ,u16 index)
+static u16 link_writeBuf(u16 handle, u8* data , u16 len ,u16 index)
 {
     u16 i;
 
     for(i=0; i<len; i++){
         if( data[i] == ECGP_END ){
-            link_frameBuf[index++] = ECGP_ESC;
-            link_frameBuf[index++] = ECGP_ESC_END;
+            link_frameBuf[handle].buffer[index++] = ECGP_ESC;
+            link_frameBuf[handle].buffer[index++] = ECGP_ESC_END;
         }
         else if( data[i] == ECGP_ESC ){
-            link_frameBuf[index++] = ECGP_ESC;
-            link_frameBuf[index++] = ECGP_ESC_ESC;          
+            link_frameBuf[handle].buffer[index++] = ECGP_ESC;
+            link_frameBuf[handle].buffer[index++] = ECGP_ESC_ESC;
         }
         else
         {
-            link_frameBuf[index++] = data[i];
+            link_frameBuf[handle].buffer[index++] = data[i];
         }
     }
     return index;
@@ -76,76 +86,36 @@ static ECGP_error link_writeRxfifo(u8* src, u16 len)
 
     }
 }
-/**********************************************************************
-* Description:  only used by link layer.
-                write frame data into transmit buffer . 
-                tx buffer is used for sending.
-* Input:        data length
-* Return:       error code
-**********************************************************************/
-static ECGP_error link_writeTxfifo(u16 len)
-{
-    u16 i,len_remain;
-    u16 in,out;
- 
-    if (ECGP_tx_fifo.full)  
-    {
-        return -ECGP_EFULL;
-    }
-    in  = ECGP_tx_fifo.in;
-    out = ECGP_tx_fifo.out;
-    //judge buffer size
-    if ( in >= out)
-    {
-        len_remain = ECGP_LINK_TX_FIFO_LEN - in + out;
-    }
-    else{
-        len_remain = out - in;
-    }
-    if (len_remain < len )
-    {
-        return -ECGP_EFULL;
-    }
-    //stash
-    if( in + len < ECGP_LINK_TX_FIFO_LEN ){
-        memcpy(&ECGP_tx_fifo.buf[in],link_frameBuf,len );
-    }
-    else{
-        u16 index = ECGP_LINK_TX_FIFO_LEN-in;
-        memcpy(&ECGP_tx_fifo.buf[in], link_frameBuf, index );
-        memcpy(ECGP_tx_fifo.buf, &link_frameBuf[index], len-index );
-    }
-    //update input index 
-    ECGP_tx_fifo.in = (in+len)%ECGP_LINK_TX_FIFO_LEN;
-    if(ECGP_tx_fifo.in == out){
-        ECGP_tx_fifo.full = ECGP_TRUE;
-    }
-    ECGP_tx_fifo.empty = ECGP_FALSE;
-    return ECGP_ENONE;
 
-} 
 /**********************************************************************
 * Description:  Only used by link layer.
                 Pack data pointed by src with link layer frame. 
                 Write into tx buffer.
-* Input:        date pointer, data length 
+* Input:        handle used for marking this message.date pointer, 
+                data length .
 * Return:       error code
 **********************************************************************/
-static ECGP_error link_frame( u8* src,  u16 len )
+static ECGP_error link_frame(  u16 handle, u8* src,  u16 len )
 {
     u16 i,index;
     u16 crc;
     u8 temp[4];
 
-    crc = ECGP_crc16(src,len,LINK_CRC_INIT);
-    ECGP_SET_U16(temp,len);
-    ECGP_SET_U16(temp+2,crc);
+    if (handle < ECGP_SENDBUF_MAX) {
+        crc = ECGP_crc16(src,len,LINK_CRC_INIT);
+        ECGP_SET_U16(temp,len);
+        ECGP_SET_U16(temp+2,crc);
 
-    index = link_writeBuf(temp,sizeof(temp),2);
-    index = link_writeBuf(src,len,index);
-    link_frameBuf[index++] = ECGP_END;
-
-    return link_writeTxfifo(index);
+        index = link_writeBuf(handle,temp,sizeof(temp),2);
+        index = link_writeBuf(handle,src,len,index);
+        link_frameBuf[handle].buffer[index++] = ECGP_END;
+        link_frameBuf[handle].len = index;
+        return ECGP_ENONE;
+    }
+    else {
+        return -ECGP_EFULL;
+    }
+    
 }
 
 
@@ -322,60 +292,46 @@ ECGP_error link_hasReceived(u16 recvLen)
 ECGP_error link_hasSent(u16 sendLen)
 {
     ECGP_error res;
-    u16 len,in,out;
-    //if tx fifo is empty, needn't handle. 
-    if(ECGP_tx_fifo.empty){
+    static u16 currenthandle;
+    
+#if ECGP_SENDBUF_MAX <= 8
+    u8 temp = 0x01u;
+    //if tx buffer is empty, needn't handle. 
+    if(bufBitmap){
         return 0;
     }
-
-    in = ECGP_tx_fifo.in;
-    out = ECGP_tx_fifo.out; 
-    if(in > out){
-        len =  in - out;      
-    }
-    else{
-        len = ECGP_LINK_TX_FIFO_LEN - out;      
-    }
-    //update tx fifo index.
-    //if fifo is empty, set flag.
-    if (sendLen != 0){
-        if (len > sendLen) {
-            len -= sendLen;
-            ECGP_tx_fifo.out += sendLen;
-            //reset tx fifo full flag   
-            ECGP_tx_fifo.full = ECGP_FALSE;
+    if (sendLen!=0 && sendLen==link_frameBuf[currenthandle].len){
+        bufBitmap &= ~(0x01u << currenthandle);
+        if (bufBitmap) {
+            return 0;
         }
-        else {
-            ECGP_tx_fifo.out = (out+len) % ECGP_LINK_TX_FIFO_LEN;
-            //reset tx fifo full flag   
-            ECGP_tx_fifo.full = ECGP_FALSE;
-            if (ECGP_tx_fifo.out == in) {
-                ECGP_tx_fifo.empty = ECGP_TRUE;
-                return 0;
-            }
-            else{
-                return link_hasSent(0);
-            }
-        }       
     }
-    
+    for (u8 i = 0; i < ECGP_SENDBUF_MAX; i++) {
+        if (bufBitmap&temp) {
+            currenthandle = i;
+        }
+        temp <<= 1;
+    }
+#endif
+     
     //call phy function to send
-    res = ECGP_physicalSend(&ECGP_tx_fifo.buf[ECGP_tx_fifo.out], len);
+    res = ECGP_physicalSend(link_frameBuf[currenthandle].buffer, link_frameBuf[currenthandle].len);
     if( res == ECGP_ENONE ){
-        return len;
+        return link_frameBuf[currenthandle].len;
     }
     return res;
 }
 /**********************************************************************
 * Description:  Only used by network layer.
                 Send data
-* Input:        data address,length of sent data
+* Input:        handle used for marking this message,data address,
+                length of sent data.
 * Return:       error code
 **********************************************************************/
-ECGP_error ECGP_linkSend(u8* data, u16 len)
+ECGP_error ECGP_linkSend(u16 handle, u8* data, u16 len )
 {
     ECGP_error res;
-    res = link_frame(data,len);
+    res = link_frame(handle,data,len);
     if(res != ECGP_ENONE){
         return res;
     }
@@ -400,29 +356,17 @@ ECGP_error ECGP_linkRecv(u8* data, u16 len)
     }
 }
 
-void link_test(void)
-{
-    memcpy(&ECGP_tx_fifo, &ECGP_rx_fifo, sizeof(ECGP_tx_fifo));
-}
 
 
 void link_init(void)
 {
+    memset(link_frameBuf, 0, sizeof(link_frameBuf));
     ECGP_rx_fifo.buf = _rx_fifo;
-    ECGP_tx_fifo.buf = _tx_fifo;
-
-    link_frameBuf[0] = ECGP_END;
-    link_frameBuf[1] = ECGP_END;
-
     ECGP_rx_fifo.in = 0;
     ECGP_rx_fifo.out = 0;
     ECGP_rx_fifo.full = ECGP_FALSE;
     ECGP_rx_fifo.empty = ECGP_TRUE;
 
-    ECGP_tx_fifo.in = 0;
-    ECGP_tx_fifo.out = 0;
-    ECGP_tx_fifo.full = ECGP_FALSE;
-    ECGP_tx_fifo.empty = ECGP_TRUE;
     link_hasReceived(0);
 }
 

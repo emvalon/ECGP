@@ -34,11 +34,13 @@ static u8 seq = 0;
 **********************************************************************/
 static ECGP_error transport_sendAck(u8 seq)
 {
+    u16 handle;
     u8 temp[2];
     temp[0] = seq|(~TRANS_SEQ_MASK);
     temp[1] = 0xffu - temp[0];
+    handle = transport_getAckHandler();
     //send to network lager
-    return ECGP_networkSend(temp,2);
+    return ECGP_networkSend(handle,temp,2);
 }
 /**********************************************************************
 * Description:  only used by transport layer.
@@ -64,22 +66,31 @@ static void transport_processAck(u8 seq)
 }
 /**********************************************************************
 * Description:  only used by transport layer.
-                set ack waiting information.
-* Input:        sequence number
-* Return:       error code
+                get ack handle used for marking this message.
+* Input:        none
+* Return:       error code or handle
 **********************************************************************/
-static ECGP_error transport_setAckWaiting(u8 seq)
+static ECGP_error transport_getAckHandler(void)
 {
-    u8 i,temp=0x01u;
-    for(i=0;i<8;i++){
-        if((seqGroup&temp) == 0){
-            seqBitmap[i] = seq;
-            seqGroup |= temp;
-            return ECGP_ENONE;
+    u8 i, temp = 0x01u;
+    for (i = 0; i < 8; i++) {
+        if ((seqGroup&temp) == 0) {
+            return i;
         }
         temp <<= 1;
     }
     return -ECGP_ESEQ;
+}
+/**********************************************************************
+* Description:  only used by transport layer.
+                set ack waiting information.
+* Input:        handle,sequence number
+* Return:       void
+**********************************************************************/
+static void transport_setAckWaiting(u16 handle, u8 seq )
+{
+    seqBitmap[handle] = seq;
+    seqGroup |= 0x01u<<handle;
 }
 static u8 transport_getSequence(void)
 {
@@ -96,7 +107,8 @@ static u8 transport_getSequence(void)
 **********************************************************************/
 ECGP_error ECGP_transportSend(u8* data, u16 len)
 {
-    u16 crc;
+    ECGP_error res;
+    u16 crc,handle;
     //get sequence if no full
     trans_tx_buffer[0] = transport_getSequence();
     if(trans_tx_buffer[0] > TRANS_SEQ_MASK){
@@ -107,9 +119,14 @@ ECGP_error ECGP_transportSend(u8* data, u16 len)
     crc = ECGP_crc16(trans_tx_buffer,len+1,TRANS_CRC_INIT);
     ECGP_SET_U16(&trans_tx_buffer[len+1],crc);
     //need ack check
-    transport_setAckWaiting(trans_tx_buffer[0]);
+    handle = transport_getAckHandler();
     //send to network lager
-    return ECGP_networkSend(trans_tx_buffer,len+3);
+    res = ECGP_networkSend(handle,trans_tx_buffer,len+3);
+    if (res == ECGP_ENONE) {
+        transport_setAckWaiting(handle,trans_tx_buffer[0]);
+    }
+    return res;
+    
 }
 
 /**********************************************************************
