@@ -50,7 +50,15 @@ ECGP_error ECGP_timeElapsed(int time)
     return ECGP_presentElapsed(time);
 }
 
-
+/**********************************************************************
+* Description:  Set rx callback.
+* Input:        point to callback function
+* Return:       none
+**********************************************************************/
+void ECGP_setRxCallback(link_callback_typedef fun)
+{
+    ECGP_rx_callback = fun;
+}
 
 
 

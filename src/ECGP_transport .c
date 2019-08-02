@@ -63,7 +63,7 @@ static void transport_processAck(u8 seq)
     for(i=0;i<8;i++){
         if(seqGroup&temp){
             if(seq == trans_tx[i].seq){
-                seqGroup ^= temp;
+                seqGroup &= ~temp;
                 return;
             }
         }

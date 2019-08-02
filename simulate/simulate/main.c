@@ -7,6 +7,12 @@ DWORD WINAPI recv_thread(LPVOID lpParameter);
 ECGP_error link_frame(u8* src, u16 len);
 ECGP_error link_verfy(u8* dst, u16 len);
 
+
+void rx_cb(u16 num)
+{
+    printf("\nrecv %d\n", num);
+}
+
 int main()
 {
     HANDLE thread;
@@ -14,7 +20,7 @@ int main()
     ECGP_error res;
 
     link_init();
-
+    ECGP_setRxCallback(rx_cb);
     p = malloc(102);
    
    

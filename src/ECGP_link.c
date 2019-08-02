@@ -25,8 +25,7 @@ static ECGP_Link_Fifo   ECGP_rx_fifo, ECGP_tx_fifo;
 static u8 _rx_fifo[ECGP_LINK_RX_FIFO_LEN];
 static u8 _tx_fifo[ECGP_LINK_TX_FIFO_LEN];
 
-
-
+link_callback_typedef ECGP_rx_callback;
 
 inline static void link_rx_fifo_out_increase(void)
 {
@@ -286,13 +285,20 @@ ECGP_error link_hasReceived(u16 recvLen)
     //update rx fifo index.
     //if fifo is full, set flag.
     if (recvLen != 0) {
+        
         if (len > recvLen) {
+            if (ECGP_rx_callback != NULL) {
+                ECGP_rx_callback(recvLen);
+            }
             len -= recvLen;
             ECGP_rx_fifo.in += recvLen;
             //reset rx fifo empty flag   
             ECGP_rx_fifo.empty = ECGP_FALSE;
         }
         else {
+            if (ECGP_rx_callback != NULL) {
+                ECGP_rx_callback(len);
+            }
             ECGP_rx_fifo.in = (in + len) % ECGP_LINK_RX_FIFO_LEN;
             //reset rx fifo empty flag   
             ECGP_rx_fifo.empty = ECGP_FALSE;
@@ -305,6 +311,7 @@ ECGP_error link_hasReceived(u16 recvLen)
             }
         }
     }
+    
     //call phy function to receive
     res = ECGP_physicalRecv(&ECGP_rx_fifo.buf[ECGP_rx_fifo.in], len);
     if (res == ECGP_ENONE) {

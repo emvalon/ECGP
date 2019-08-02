@@ -30,6 +30,7 @@
 #define ECGP_ESC_ESC    0xDD	//	帧退出转义符
 
 
+
 typedef struct {
     u16 in, out;
     ECGP_Bool full;
@@ -37,13 +38,13 @@ typedef struct {
     u8* buf;
 }ECGP_Link_Fifo;
 
-
+extern link_callback_typedef ECGP_rx_callback;
 
 ECGP_error ECGP_linkSend(u8* data, u16 len);
 ECGP_error ECGP_linkRecv(u8* data, u16 len);
 
+
 void link_init(void);
-void link_test(void);
 
 
 

@@ -35,7 +35,7 @@ typedef enum {
     ECGP_TRUE
 }ECGP_Bool;
 
-
+typedef void(*link_callback_typedef)(u16 num);
 
 #define ECGP_POINT_U8(d)            ((u8*)d)
 
