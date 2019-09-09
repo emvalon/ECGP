@@ -6,3 +6,7 @@ simulate/Debug/
 simulate/\.vs/
 
 simulate/simulate/Debug/
+
+simulate/simulate/x64/Debug/
+
+simulate/x64/Debug/

@@ -16,18 +16,20 @@
 #define TRANS_SEQ_MASK          0X7Fu
 #define TRANS_CRC_INIT          0XFFFFu
 
+
 typedef struct {
     int timeout;
     u16 len;
-    u8 seq;
+    u8 seq,resend;
     u8 buf[ECGP_TRANS_LEN_MAX];
 
 }TransTx_TypeDef_t;
 
 static u8 trans_rx_buffer[ECGP_TRANS_LEN_MAX];
 
-static TransTx_TypeDef_t trans_tx[8];
-static u8 seqGroup=0,seq=0;
+static TransTx_TypeDef_t trans_tx[ECGP_TRANS_REBUF_MAX];
+static u8  seq=0;
+static u32 seqGroup = 0;
 
 
 /*
@@ -56,11 +58,12 @@ static ECGP_error transport_sendAck(u8 seq)
 **********************************************************************/
 static void transport_processAck(u8 seq)
 { 
-    u8 i,temp=0x01u;
+	u8 i;
+	u32 temp = 0x00000001u;
     if(seqGroup == 0){
         return;
     }
-    for(i=0;i<8;i++){
+    for(i=0;i< ECGP_TRANS_REBUF_MAX;i++){
         if(seqGroup&temp){
             if(seq == trans_tx[i].seq){
                 seqGroup &= ~temp;
@@ -78,12 +81,13 @@ static void transport_processAck(u8 seq)
 **********************************************************************/
 static u8 transport_getAckHandle(void)
 {
+	static u32 groupMask = 0x00000001u << ECGP_TRANS_REBUF_MAX -1;
     u8 i;
-    u8 temp = 0x01u;
-    if (seqGroup == 0xff) {
-        return 0xff;
+    u32 temp = 0x00000001u;
+    if (seqGroup >= groupMask) {
+        return 0xffffffffu;
     }
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < ECGP_TRANS_REBUF_MAX; i++) {
         if ((seqGroup&temp) == 0) {
             break;
         }
@@ -102,6 +106,7 @@ static void transport_setAckWaiting(u16 handle,u8 seq)
     trans_tx[handle].seq = seq;
     seqGroup |= 0x01u << handle;
     trans_tx[handle].timeout = ECGP_TRANS_NOACK_TIMEOUT;
+	trans_tx[handle].resend  = ECGP_TRANS_NOACK_RESEND;
 }
 /**********************************************************************
 * Description:  only used by transport layer.
@@ -133,7 +138,7 @@ ECGP_error ECGP_transportSend(u8* data, u16 len)
     u16 crc;
     u8 handle,seq;
     handle = transport_getAckHandle();
-    if (handle >= 8) {
+    if (handle >= ECGP_TRANS_REBUF_MAX) {
         return -ECGP_ESEQ;
     }
     //get sequence if no full
@@ -207,23 +212,32 @@ ECGP_error ECGP_transportRecv(u8* data, u16 len)
 **********************************************************************/
 ECGP_error ECGP_transportElapsed(int time)
 {
-    u8 i,temp=0x01u;
-    ECGP_error res;
+	u8 i;
+	u32 temp = 0x00000001u;
+    ECGP_error res=0;
 
     if (seqGroup == 0) {
         return ECGP_ENONE;
     }
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < ECGP_TRANS_REBUF_MAX; i++) {
         if (seqGroup&temp) {
             trans_tx[i].timeout -= time;
+			printf("trans_tx[%d]=%d",i, trans_tx[i].timeout);
             if (trans_tx[i].timeout <= 0) {
-                res = transport_resend(i);
-                if (res == ECGP_ENONE) {
-                    trans_tx[i].timeout = ECGP_TRANS_NOACK_TIMEOUT;
-                }
-                else {
-                    return res;
-                }
+				if (trans_tx[i].resend != 0) {
+					printf("**************resend\n");
+					res = transport_resend(i);
+					if (res == ECGP_ENONE) {	
+						trans_tx[i].resend--;
+						trans_tx[i].timeout = ECGP_TRANS_NOACK_TIMEOUT;
+					}
+					else {
+						return res;
+					}
+				}
+				else {
+					return -ECGP_ECOMM;
+				}
             }
         }
         temp <<= 1;

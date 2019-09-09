@@ -27,6 +27,7 @@ enum{
   ECGP_ESEQ,            //sequence error
   ECGP_ESENDACK,        //send ack error
   ECGP_ELENGTH,         //larger then maximum length
+  ECGP_ECOMM,			//communication fault 
 }ECGP_ERROE;
 
 

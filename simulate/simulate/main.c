@@ -51,6 +51,12 @@ DWORD WINAPI recv_thread(LPVOID lpParameter)
     ECGP_error res;
     p = malloc(101);
     while (1) {
+		res = ECGP_timeElapsed(99);
+		if (res != ECGP_ENONE) {
+            printf("time error:%d\n", res);
+			while (1);
+        }
+
         res = ECGP_recv(p, 100);
         if (res < 0) {
             printf("recv error:%d\r\n", res);
@@ -62,10 +68,8 @@ DWORD WINAPI recv_thread(LPVOID lpParameter)
             }
             printf("\n");
         }
-        res = ECGP_timeElapsed(10);
-        if (res != ECGP_ENONE) {
-            printf("time error:%d\n", res);
-        }
+        
+       
         Sleep(10);
     }
     
