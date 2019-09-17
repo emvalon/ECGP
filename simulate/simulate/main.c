@@ -4,22 +4,20 @@
 
 
 DWORD WINAPI recv_thread(LPVOID lpParameter);
-ECGP_error link_frame(u8* src, u16 len);
-ECGP_error link_verfy(u8* dst, u16 len);
 
 
 void rx_cb(u16 num)
 {
-    printf("\nrecv %d\n", num);
+   // printf("\nrecv %d\n", num);
 }
 
 int main()
 {
     HANDLE thread;
     u8* p;
-    ECGP_error res;
+    ECGP_error res; 
 
-    link_init();
+	ECGP_init();
     ECGP_setRxCallback(rx_cb);
     p = malloc(102);
    
@@ -51,23 +49,26 @@ DWORD WINAPI recv_thread(LPVOID lpParameter)
     ECGP_error res;
     p = malloc(101);
     while (1) {
-		res = ECGP_timeElapsed(99);
+		res = ECGP_timeElapsed(10);
 		if (res != ECGP_ENONE) {
             printf("time error:%d\n", res);
 			while (1);
         }
-
-        res = ECGP_recv(p, 100);
-        if (res < 0) {
-            printf("recv error:%d\r\n", res);
-        }
-        else if(res > 0 ){
-            printf("\nread length %d : ",res);
-            for (int i = 0; i < res; i++) {
-                printf("%c", p[i]);
-            }
-            printf("\n");
-        }
+		do
+		{
+			res = ECGP_recv(p, 100);
+			if (res < 0) {
+				printf("recv error:%d\r\n", res);
+			}
+			else if(res > 0 ){
+				printf("\nread length %d : ",res);
+				for (int i = 0; i < res; i++) {
+					printf("%c", p[i]);
+				}
+				printf("\n");
+			}
+		} while (res>0);
+        
         
        
         Sleep(10);

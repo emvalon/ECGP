@@ -25,7 +25,7 @@ static ECGP_Link_Fifo   ECGP_rx_fifo, ECGP_tx_fifo;
 static u8 _rx_fifo[ECGP_LINK_RX_FIFO_LEN];
 static u8 _tx_fifo[ECGP_LINK_TX_FIFO_LEN];
 
-link_callback_typedef ECGP_rx_callback;
+link_callback_typedef ECGP_rx_callback=NULL;
 
 inline static void link_rx_fifo_out_increase(void)
 {
@@ -407,13 +407,12 @@ ECGP_error ECGP_linkRecv(u8* data, u16 len)
     }
 }
 
-void link_test(void)
-{
-    memcpy(&ECGP_tx_fifo, &ECGP_rx_fifo, sizeof(ECGP_tx_fifo));
-}
-
-
-void link_init(void)
+/**********************************************************************
+* Description:  initialize link layer.
+* Input:        none
+* Return:       none
+**********************************************************************/
+void ECGP_linkInit(void)
 {
     ECGP_rx_fifo.buf = _rx_fifo;
     ECGP_tx_fifo.buf = _tx_fifo;

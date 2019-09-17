@@ -11,14 +11,6 @@
 #include "ECGP_application.h"
 #include "ECGP_config.h"
 
-
-
-
-
-
-
-
-
 /**********************************************************************
 * Description:  Application layer send.
 * Input:        point to data buffer, buffer length
@@ -60,7 +52,15 @@ void ECGP_setRxCallback(link_callback_typedef fun)
     ECGP_rx_callback = fun;
 }
 
-
+/**********************************************************************
+* Description:  initialize ECGP stack.
+* Input:        none
+* Return:       none
+**********************************************************************/
+void ECGP_init(void)
+{
+	ECGP_presentInit();
+}
 
 
 

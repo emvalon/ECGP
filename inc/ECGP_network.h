@@ -20,7 +20,7 @@
 
 #define ECGP_networkSend        ECGP_linkSend
 #define ECGP_networkRecv        ECGP_linkRecv
-
+#define ECGP_networkInit		ECGP_linkInit
 
 //ECGP_error ECGP_networkSend(u8* data, u16 len);
 //ECGP_error ECGP_networkRecv(u8* data, u16 len);

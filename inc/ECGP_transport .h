@@ -29,7 +29,7 @@
 ECGP_error ECGP_transportSend(u8* data, u16 len);
 ECGP_error ECGP_transportRecv(u8* data, u16 len);
 ECGP_error ECGP_transportElapsed(int time);
-
+void ECGP_transportInit(void);
 
 
 

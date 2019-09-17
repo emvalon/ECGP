@@ -22,7 +22,6 @@ typedef struct {
     u16 len;
     u8 seq,resend;
     u8 buf[ECGP_TRANS_LEN_MAX];
-
 }TransTx_TypeDef_t;
 
 static u8 trans_rx_buffer[ECGP_TRANS_LEN_MAX];
@@ -222,10 +221,8 @@ ECGP_error ECGP_transportElapsed(int time)
     for (i = 0; i < ECGP_TRANS_REBUF_MAX; i++) {
         if (seqGroup&temp) {
             trans_tx[i].timeout -= time;
-			printf("trans_tx[%d]=%d",i, trans_tx[i].timeout);
             if (trans_tx[i].timeout <= 0) {
 				if (trans_tx[i].resend != 0) {
-					printf("**************resend\n");
 					res = transport_resend(i);
 					if (res == ECGP_ENONE) {	
 						trans_tx[i].resend--;
@@ -245,9 +242,17 @@ ECGP_error ECGP_transportElapsed(int time)
     return ECGP_ENONE;
 }
 
-
-
-
+/**********************************************************************
+* Description:  initialize transport layer.
+* Input:        none
+* Return:       none
+**********************************************************************/
+void ECGP_transportInit(void)
+{
+	seq = 0;
+	seqGroup = 0;
+	ECGP_networkInit();
+}
 
 
 
