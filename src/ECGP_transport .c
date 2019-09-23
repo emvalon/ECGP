@@ -162,20 +162,28 @@ ECGP_error ECGP_transportSend(u8* data, u16 len)
 * Input:        point to data buffer, buffer length
 * Return:       error code
 **********************************************************************/
+u8 seqCur;
+#ifndef ECGP_RECV_IN_ORDER
+u8 seqPre;
+#endif // !ECGP_RECV_IN_ORDER
+
 ECGP_error ECGP_transportRecv(u8* data, u16 len)
 {
     ECGP_error readLen;
     u16 crc,crc_recv;
+	u8 seqRecv;
     readLen = ECGP_networkRecv(trans_rx_buffer,ECGP_TRANS_LEN_MAX);
     if( readLen <= 0){
         return readLen;
     }else if(readLen < 2){
         return 0;
     }
+
+	seqRecv = trans_rx_buffer[0];
     // is ack
-    if(trans_rx_buffer[0] & (~TRANS_SEQ_MASK)){
-        if(trans_rx_buffer[0]+trans_rx_buffer[1] == 0xff){
-            transport_processAck(trans_rx_buffer[0]&TRANS_SEQ_MASK);
+    if(seqRecv & (~TRANS_SEQ_MASK)){
+        if(seqRecv +trans_rx_buffer[1] == 0xff){
+            transport_processAck( seqRecv&TRANS_SEQ_MASK );
         }
         else{
             // ignore
@@ -191,17 +199,28 @@ ECGP_error ECGP_transportRecv(u8* data, u16 len)
         // ignore , continue to check
         return  ECGP_transportRecv(data,len);
     }
-    // send ack
+	//Judge sequeue
+	if (seqRecv == seqCur) {
+		// send ack 
+		if(transport_sendAck(seqRecv) != ECGP_ENONE){
+			return -ECGP_ESENDACK;
+		}
+		// copy data
+		if(--readLen > len){
+			readLen = len;
+		}
+		memcpy(data,&trans_rx_buffer[1],readLen);
+		seqCur++;
+		return readLen;
+		 
+	}
+	else {
+		return ECGP_transportRecv(data, len);
+	}
+
+		   
+
     
-    if(transport_sendAck(trans_rx_buffer[0]) != ECGP_ENONE){
-        return -ECGP_ESENDACK;
-    }
-    // copy data
-    if(--readLen > len){
-        readLen = len;
-    }
-    memcpy(data,&trans_rx_buffer[1],readLen);
-    return readLen;
 }
 
 /**********************************************************************
@@ -249,6 +268,10 @@ ECGP_error ECGP_transportElapsed(int time)
 **********************************************************************/
 void ECGP_transportInit(void)
 {
+	seqCur = 0;
+#ifndef ECGP_RECV_IN_ORDER
+	seqPre	= 0xff;
+#endif // !ECGP_RECV_IN_ORDER
 	seq = 0;
 	seqGroup = 0;
 	ECGP_networkInit();

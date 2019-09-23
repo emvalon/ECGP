@@ -23,7 +23,14 @@
 //#define ECGP_USE_CRC32_TABLE 
 
 
+/*
+ *************************************************
+ * If you want to receive message in order ,
+ * Pls define this macro.
+ *************************************************
+ */
 
+#define ECGP_RECV_IN_ORDER
 
 
 
