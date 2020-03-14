@@ -10,6 +10,10 @@ void rx_cb(u16 num)
 {
    // printf("\nrecv %d\n", num);
 }
+void tx_cb(u16 num)
+{
+	 printf("tx num: %d\n", num);
+}
 
 int main()
 {
@@ -19,6 +23,7 @@ int main()
 
 	ECGP_init();
     ECGP_setRxCallback(rx_cb);
+	ECGP_setTxCallback(tx_cb);
     p = malloc(102);
    
    

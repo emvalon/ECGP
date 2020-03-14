@@ -25,7 +25,8 @@ static ECGP_Link_Fifo   ECGP_rx_fifo, ECGP_tx_fifo;
 static u8 _rx_fifo[ECGP_LINK_RX_FIFO_LEN];
 static u8 _tx_fifo[ECGP_LINK_TX_FIFO_LEN];
 
-link_callback_typedef ECGP_rx_callback=NULL;
+link_callback_typedef ECGP_rx_callback = NULL;
+link_callback_typedef ECGP_tx_callback = NULL;
 
 inline static void link_rx_fifo_out_increase(void)
 {
@@ -334,7 +335,7 @@ ECGP_error link_hasSent(u16 sendLen)
     if(ECGP_tx_fifo.empty){
         return 0;
     }
-
+	
     in = ECGP_tx_fifo.in;
     out = ECGP_tx_fifo.out; 
     if(in > out){
@@ -368,6 +369,9 @@ ECGP_error link_hasSent(u16 sendLen)
     
     //call phy function to send
     res = ECGP_physicalSend(&ECGP_tx_fifo.buf[ECGP_tx_fifo.out], len);
+	if (ECGP_tx_callback != NULL) {
+		ECGP_tx_callback(sendLen);
+	}
     if( res == ECGP_ENONE ){
         return len;
     }

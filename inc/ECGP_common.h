@@ -41,9 +41,9 @@ typedef void(*link_callback_typedef)(u16 num);
 #define ECGP_POINT_U8(d)            ((u8*)d)
 
 #define ECGP_GET_U16(a)         ( ( *ECGP_POINT_U8(a)) | (*(ECGP_POINT_U8(a)+1)<<8) )
-#define ECGP_SET_U16(a,d)       do{                                               \
-                                    *ECGP_POINT_U8(a)       = d&0xffu;        \
-                                    *(ECGP_POINT_U8(a)+1)   = (d>>8)&0xffu;   \
+#define ECGP_SET_U16(add,data)  do{                                                \
+                                    *ECGP_POINT_U8(add)       = data&0xffu;        \
+                                    *(ECGP_POINT_U8(add)+1)   = (data>>8)&0xffu;   \
                                 }while(0)
 
 

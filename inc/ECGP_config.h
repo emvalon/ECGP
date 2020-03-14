@@ -33,9 +33,15 @@
 #define ECGP_RECV_IN_ORDER
 
 
+ /*
+  *************************************************
+  * In order to protect critical data ,
+  * Pls define these macro.
+  *************************************************
+  */
 
-
-
+#define _ECGP_ENTER_CRITICAL
+#define _ECGP_LEAVE_CRITICAL
 
 
 

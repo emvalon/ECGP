@@ -123,6 +123,7 @@
     <ClCompile Include="..\..\src\ECGP_application.c" />
     <ClCompile Include="..\..\src\ECGP_crc.c" />
     <ClCompile Include="..\..\src\ECGP_link.c" />
+    <ClCompile Include="..\..\src\ECGP_list.c" />
     <ClCompile Include="..\..\src\ECGP_network.c" />
     <ClCompile Include="..\..\src\ECGP_presentation.c" />
     <ClCompile Include="..\..\src\ECGP_transport .c" />

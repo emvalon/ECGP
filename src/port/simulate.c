@@ -24,6 +24,7 @@ u16 bufLen;
     memcpy(bufData, data, l);
     link_hasReceived(l);
     link_hasSent(l); 
+	return ECGP_ENONE;
  }
 
 
@@ -31,6 +32,7 @@ u16 bufLen;
  {
      bufData = data;
      bufLen = len;
+	 return ECGP_ENONE;
  }
 
 

@@ -39,6 +39,9 @@
     <ClCompile Include="..\..\src\port\simulate.c">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ECGP_list.c">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\ECGP.h">

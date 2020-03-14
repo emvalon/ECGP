@@ -53,6 +53,16 @@ void ECGP_setRxCallback(link_callback_typedef fun)
 }
 
 /**********************************************************************
+* Description:  Set Tx callback.
+* Input:        point to callback function
+* Return:       none
+**********************************************************************/
+void ECGP_setTxCallback(link_callback_typedef fun)
+{
+	ECGP_tx_callback = fun;
+}
+
+/**********************************************************************
 * Description:  initialize ECGP stack.
 * Input:        none
 * Return:       none

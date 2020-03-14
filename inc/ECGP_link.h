@@ -39,6 +39,7 @@ typedef struct {
 }ECGP_Link_Fifo;
 
 extern link_callback_typedef ECGP_rx_callback;
+extern link_callback_typedef ECGP_tx_callback;
 
 ECGP_error ECGP_linkSend(u8* data, u16 len);
 ECGP_error ECGP_linkRecv(u8* data, u16 len);
