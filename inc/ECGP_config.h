@@ -23,12 +23,25 @@
 //#define ECGP_USE_CRC32_TABLE 
 
 
+/*
+ *************************************************
+ * If you want to receive message in order ,
+ * Pls define this macro.
+ *************************************************
+ */
+
+#define ECGP_RECV_IN_ORDER
 
 
+ /*
+  *************************************************
+  * In order to protect critical data ,
+  * Pls define these macro.
+  *************************************************
+  */
 
-
-
-
+#define _ECGP_ENTER_CRITICAL
+#define _ECGP_LEAVE_CRITICAL
 
 
 

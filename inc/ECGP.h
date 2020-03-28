@@ -15,8 +15,9 @@
 
 
 
-
-
+#include "ECGP_application.h"
+#include "ECGP_common.h"
+#include "ECGP_config.h"
 
 
 

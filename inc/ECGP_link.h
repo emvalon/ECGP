@@ -11,8 +11,18 @@
 #ifndef _ECGP_LINK_H_
 #define _ECGP_LINK_H_
 
+#include "ECGP_network.h"
+#include "ECGP_physical.h" 
+#include "ECGP_common.h"
 
-#define LINK_CRC_INIT   0xffffffff
+#define LINK_CRC_INIT         0xffffffff
+#define ECGP_LINK_LEN_MAX    (2*(ECGP_NET_LEN_MAX+4)+3)
+
+//定义fifo大小
+#define ECGP_LINK_RX_FIFO_LEN  (3*ECGP_LINK_LEN_MAX)
+#define ECGP_LINK_TX_FIFO_LEN  (3*ECGP_LINK_LEN_MAX)
+
+
 
 #define ECGP_END        0xC0	//END	帧结束符
 #define	ECGP_ESC        0XDB    //ESC   帧退出符
@@ -21,17 +31,19 @@
 
 
 
+typedef struct {
+    u16 in, out;
+    ECGP_Bool full;
+    ECGP_Bool empty;
+    u8* buf;
+}ECGP_Link_Fifo;
 
+extern link_callback_typedef ECGP_rx_callback;
+extern link_callback_typedef ECGP_tx_callback;
 
-
-
-
-
-
-
-
-
-
+ECGP_error ECGP_linkSend(u8* data, u16 len);
+ECGP_error ECGP_linkRecv(u8* data, u16 len);
+void ECGP_linkInit(void);
 
 
 #endif

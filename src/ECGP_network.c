@@ -10,18 +10,25 @@
 
 #include "ECGP_network.h"
 #include "ECGP_config.h"
+#include "ECGP_common.h"
 
 
 
 
 
+/*
+ECGP_error ECGP_networkSend(u8* data, u16 len)
+{
+
+}
 
 
 
+ECGP_error ECGP_networkRecv(u8* data, u16 len)
+{
 
-
-
-
+}
+ */
 
 
 

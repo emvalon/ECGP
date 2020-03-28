@@ -1,3 +1,4 @@
+
 /**
   ******************************************************************************
   * File Name          : ECGP_link.c
@@ -9,32 +10,23 @@
 */
 
 #include "ECGP_link.h"
+#include "ECGP_physical.h"
 #include "ECGP_config.h"
-#include "ECGP_common.h" 
 #include "ECGP_crc.h"
-
-#define ECGP_LINK_RX_FIFO_LEN  4096
-#define ECGP_LINK_TX_FIFO_LEN  4096
+#include "string.h"
 
 
+static u8 link_frameBuf[ECGP_LINK_LEN_MAX];
 static u16 rx_fifo_out;
-static u16 tx_fifo_in;
 
-typedef struct{ 
-   u16 in,out;
-   ECGP_Bool full; 
-   u8 buf[ECGP_LINK_RX_FIFO_LEN];
-}ECGP_Link_RxFifo;
 
-typedef struct{ 
-   u16 in,out;
-   ECGP_Bool full; 
-   u8 buf[ECGP_LINK_TX_FIFO_LEN];
-}ECGP_Link_TxFifo;
 
-static ECGP_Link_RxFifo   ECGP_rx_fifo; 
-static ECGP_Link_TxFifo   ECGP_tx_fifo; 
+static ECGP_Link_Fifo   ECGP_rx_fifo, ECGP_tx_fifo;
+static u8 _rx_fifo[ECGP_LINK_RX_FIFO_LEN];
+static u8 _tx_fifo[ECGP_LINK_TX_FIFO_LEN];
 
+link_callback_typedef ECGP_rx_callback = NULL;
+link_callback_typedef ECGP_tx_callback = NULL;
 
 inline static void link_rx_fifo_out_increase(void)
 {
@@ -43,127 +35,126 @@ inline static void link_rx_fifo_out_increase(void)
     }
 }
 
-static void link_fifo_init(void)
-{
-    ECGP_rx_fifo.in     = 0;
-    ECGP_rx_fifo.out    = 0;
-    ECGP_rx_fifo.full   = ECGP_FALSE;
 
-    ECGP_tx_fifo.in     = 0;
-    ECGP_tx_fifo.out    = 0;
-    ECGP_tx_fifo.full   = ECGP_FALSE;
-}
 
-static u8 link_tx_fifo_in_increase()
+
+/**********************************************************************
+* Description:  only used by link layer.
+                write data into frame buffer. 
+* Input:        data pointer, data length, index of start 
+* Return:      current index
+**********************************************************************/
+static u16 link_writeBuf(u8* data , u16 len ,u16 index)
 {
-    if(tx_fifo_in >= ECGP_LINK_TX_FIFO_LEN){
-        tx_fifo_in = 0;
-    }
-    if(tx_fifo_in == ECGP_tx_fifo.out){
-        return 1;
-    }
-    return 0;
-}
-/*
-    功能：  写入数据到发送buffer
-    参数：  data    数据
-    返回：  ECGP_ENONE        写入成功
-            ECGP_EFULL        写入成功，fifo已满
-            -ECGP_EFULL       写入失败,FIFO已满
-*/
-static ECGP_error link_writeTxfifo(u8 data)
-{
-    if(ECGP_tx_fifo.full){
-        return 0;
-    }
-    else{
-        if( data == ECGP_END ){
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC;
-            if( link_tx_fifo_in_increase() ){
-                return -ECGP_EFULL;
-            }
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC_END;
+    u16 i;
+
+    for(i=0; i<len; i++){
+        if( data[i] == ECGP_END ){
+            link_frameBuf[index++] = ECGP_ESC;
+            link_frameBuf[index++] = ECGP_ESC_END;
         }
-        else if( data == ECGP_ESC ){
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC;
-            if( link_tx_fifo_in_increase() ){
-                return -ECGP_EFULL;
-            }
-            ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_ESC_ESC;           
+        else if( data[i] == ECGP_ESC ){
+            link_frameBuf[index++] = ECGP_ESC;
+            link_frameBuf[index++] = ECGP_ESC_ESC;          
         }
         else
         {
-            ECGP_tx_fifo.buf[tx_fifo_in] = data;
+            link_frameBuf[index++] = data[i];
         }
-
-        if( link_tx_fifo_in_increase() ){
-            return ECGP_EFULL;
-        }
-        return ECGP_ENONE;
     }
-} 
-/*
-    功能：  将上层数据进行封装
-    参数：  sec     输入数据
-            dst     输出数据，最大长度为2*len+2
-            len     输入数据长度
-    返回：  
-*/
-static ECGP_error link_frame( u8* src,  u16 len )
+    return index;
+}
+/**********************************************************************
+* Description:  only used by link layer.
+* Input:        sequence number
+* Return:       error code
+**********************************************************************/
+static ECGP_error link_writeRxfifo(u8* src, u16 len)
 {
     u16 i;
+    for (i = 0; i < len; i++) {
+
+    }
+}
+/**********************************************************************
+* Description:  only used by link layer.
+                write frame data into transmit buffer . 
+                tx buffer is used for sending.
+* Input:        data length
+* Return:       error code
+**********************************************************************/
+static ECGP_error link_writeTxfifo(u16 len)
+{
+    u16 i,len_remain;
+    u16 in,out;
+ 
+    if (ECGP_tx_fifo.full)  
+    {
+        return -ECGP_EFULL;
+    }
+    in  = ECGP_tx_fifo.in;
+    out = ECGP_tx_fifo.out;
+    //judge buffer size
+    if ( in >= out)
+    {
+        len_remain = ECGP_LINK_TX_FIFO_LEN - in + out;
+    }
+    else{
+        len_remain = out - in;
+    }
+    if (len_remain < len )
+    {
+        return -ECGP_EFULL;
+    }
+    //stash
+    if( in + len < ECGP_LINK_TX_FIFO_LEN ){
+        memcpy(&ECGP_tx_fifo.buf[in],link_frameBuf,len );
+    }
+    else{
+        u16 index = ECGP_LINK_TX_FIFO_LEN-in;
+        memcpy(&ECGP_tx_fifo.buf[in], link_frameBuf, index );
+        memcpy(ECGP_tx_fifo.buf, &link_frameBuf[index], len-index );
+    }
+    //update input index 
+    ECGP_tx_fifo.in = (in+len)%ECGP_LINK_TX_FIFO_LEN;
+    if(ECGP_tx_fifo.in == out){
+        ECGP_tx_fifo.full = ECGP_TRUE;
+    }
+    ECGP_tx_fifo.empty = ECGP_FALSE;
+    return ECGP_ENONE;
+
+} 
+/**********************************************************************
+* Description:  Only used by link layer.
+                Pack data pointed by src with link layer frame. 
+                Write into tx buffer.
+* Input:        date pointer, data length 
+* Return:       error code
+**********************************************************************/
+static ECGP_error link_frame( u8* src,  u16 len )
+{
+    u16 i,index;
     u16 crc;
     u8 temp[4];
 
-    if(ECGP_tx_fifo.full ){
-        return -ECGP_EFULL;
-    }
-    if (len < 1)
-    {
-        return -ECGP_EPARA;
-    }
-    
     crc = ECGP_crc16(src,len,LINK_CRC_INIT);
     ECGP_SET_U16(temp,len);
     ECGP_SET_U16(temp+2,crc);
 
-    tx_fifo_in = ECGP_rx_fifo.in;
-    //添加2个结束符
-    for（ i=0; i<2; i++ ）{
-        ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_END;
-        if( link_tx_fifo_in_increase() ){
-            return -ECGP_EFULL;
-        }
-    }
-    //添加帧头
-    for( i=0; i<4; i++ ){
-        if( link_writeTxfifo(temp[i]) != ECGP_ENONE ){
-            return -ECGP_EFULL;
-        }
-    }
-    //添加数据
-    for( i=0; i<len; i++ ){
-        if( link_writeTxfifo(src[i]) != ECGP_ENONE ){
-            return -ECGP_EFULL;
-        }
-    }
-    //添加结束符
-    ECGP_tx_fifo.buf[tx_fifo_in] = ECGP_END;
-    if ( link_tx_fifo_in_increase() )
-    {
-        ECGP_tx_fifo.full = ECGP_TRUE;
-    }
-    ECGP_tx_fifo.in = tx_fifo_in;
-    return ECGP_ENONE;
+    index = link_writeBuf(temp,sizeof(temp),2);
+    index = link_writeBuf(src,len,index);
+    link_frameBuf[index++] = ECGP_END;
+
+    return link_writeTxfifo(index);
 }
 
-/*
-    功能：  将接受缓存的数据解析出来
-    参数：  dst     保存数据的数组的地址
-            len     保存数据的数组的长度
-    返回：  0       没有数据 或 读到了fifo的末尾没有读到完整的包
-            其他    读取的数据长度
-*/
+
+/**********************************************************************
+* Description:  Only used by link layer.
+                Unpack data from link layer frame.
+* Input:        pointer of stashing address, receive buffer size
+* Return:       length of read data
+**********************************************************************/
 static u16 link_parse( u8* dst, u16 len )
 {
     u16 cnt=0;
@@ -199,21 +190,20 @@ static u16 link_parse( u8* dst, u16 len )
         link_rx_fifo_out_increase();
         
     }
-    //在读到fifo末尾时，仍没收到len长度的包，返回0，等待下次解析
+    //if read to end,return 0. wait for next parsing.
     if( (rx_fifo_out == ECGP_rx_fifo.in) && (cnt < len) )
         return 0;
     return cnt;
     
 
 }
-/*
-    功能：  读取接收缓存的数据，校验出完整的包，忽略错误的包
-    参数：  dst     保存数据的数组的地址
-            len     保存数据的数组的长度
-    返回：  0       没有数据 或 读到了fifo的末尾没有读到完整的包
-            <0      接收到错误的包
-            其他    读取的数据长度
-*/
+/**********************************************************************
+* Description:  only used by link layer.
+                Read rx buffer and verify data.
+                write unpacked data into buffer pointed by dst.
+* Input:        stashing data buffer, buffer length
+* Return:       error code
+**********************************************************************/
 static ECGP_error link_verfy(u8* dst, u16 len)
 {
     u8 temp[2];
@@ -225,14 +215,15 @@ static ECGP_error link_verfy(u8* dst, u16 len)
             ECGP_rx_fifo.out = 0;
         }
     }
-    //使用备份，如果收到完整的包，再去更改ECGP_rx_fifo.out
+    //use temporary output index.
+    //if read whole package, update rx fifo output index
     rx_fifo_out = ECGP_rx_fifo.out;
 
     if(rx_fifo_out != ECGP_rx_fifo.in){
-        //获取数据长度
+        //get data length
         ret = link_parse(temp,sizeof(len_recv));
         if(sizeof(len_recv) != ret ){      
-            if(ret != 0){           //错误的end结束符
+            if(ret != 0){           //error end indentifier
                 ECGP_rx_fifo.out = rx_fifo_out;
                 return -ECGP_EEND;
             }
@@ -242,26 +233,26 @@ static ECGP_error link_verfy(u8* dst, u16 len)
         if(len_recv > len){
             return -ECGP_EMEMOUT;
         }
-        //获取crc
+        //get crc value
         ret = link_parse(temp,sizeof(crc_recv));
         if(sizeof(crc_recv) != ret ){   
-            if(ret != 0){           //错误的end结束符
+            if(ret != 0){           //error end indentifier
                 ECGP_rx_fifo.out = rx_fifo_out;
                 return -ECGP_EEND;
             }
             return 0;
         }
         crc_recv = ECGP_GET_U16(temp);
-        //获取数据
+        //get data
         ret = link_parse(dst,len_recv);
         if(len_recv != ret ){   
-            if(ret != 0){           //错误的end结束符
+            if(ret != 0){           //error end indentifier
                 ECGP_rx_fifo.out = rx_fifo_out;
                 return -ECGP_EEND;
             }
             return 0;
         }
-        //校验crc
+        //verify crc
         crc = ECGP_crc16(dst,len_recv,LINK_CRC_INIT);
         if(crc != crc_recv){
             len_recv = 0;
@@ -270,15 +261,180 @@ static ECGP_error link_verfy(u8* dst, u16 len)
     ECGP_rx_fifo.out = rx_fifo_out;
     return len_recv;
 }
+/**********************************************************************
+* Description:  Used by physical layer.
+                Check if rx fifo is full.
+                If not, call pyh function to receive.
+* Input:        length of received data
+* Return:       length of fifo remaining data or error code
+**********************************************************************/
+ECGP_error link_hasReceived(u16 recvLen)
+{
+    ECGP_error res;
+    u16 in, out, len;
+    if (ECGP_rx_fifo.full) {
+        return 0;
+    }
+    in = ECGP_rx_fifo.in;
+    out = ECGP_rx_fifo.out;
+    if (in < out) {
+        len = out - in;
+    }
+    else {
+        len = ECGP_LINK_RX_FIFO_LEN - in;
+    }
+    //update rx fifo index.
+    //if fifo is full, set flag.
+    if (recvLen != 0) {
+        
+        if (len > recvLen) {
+            if (ECGP_rx_callback != NULL) {
+                ECGP_rx_callback(recvLen);
+            }
+            len -= recvLen;
+            ECGP_rx_fifo.in += recvLen;
+            //reset rx fifo empty flag   
+            ECGP_rx_fifo.empty = ECGP_FALSE;
+        }
+        else {
+            if (ECGP_rx_callback != NULL) {
+                ECGP_rx_callback(len);
+            }
+            ECGP_rx_fifo.in = (in + len) % ECGP_LINK_RX_FIFO_LEN;
+            //reset rx fifo empty flag   
+            ECGP_rx_fifo.empty = ECGP_FALSE;
+            if (ECGP_rx_fifo.in == out) {
+                ECGP_rx_fifo.full = ECGP_TRUE;
+                return 0;
+            }
+            else {
+                return link_hasReceived(0);
+            }
+        }
+    }
+    
+    //call phy function to receive
+    res = ECGP_physicalRecv(&ECGP_rx_fifo.buf[ECGP_rx_fifo.in], len);
+    if (res == ECGP_ENONE) {
+        return len;
+    }
+    return res;
+}
+/**********************************************************************
+* Description:  Used by physical layer.
+                Update tx fifo output index.
+                if need to send other data, call pyh function.
+* Input:        length of sent data
+* Return:       length of next sending data or error code
+**********************************************************************/
+ECGP_error link_hasSent(u16 sendLen)
+{
+    ECGP_error res;
+    u16 len,in,out;
+    //if tx fifo is empty, needn't handle. 
+    if(ECGP_tx_fifo.empty){
+        return 0;
+    }
+	
+    in = ECGP_tx_fifo.in;
+    out = ECGP_tx_fifo.out; 
+    if(in > out){
+        len =  in - out;      
+    }
+    else{
+        len = ECGP_LINK_TX_FIFO_LEN - out;      
+    }
+    //update tx fifo index.
+    //if fifo is empty, set flag.
+    if (sendLen != 0){
+        if (len > sendLen) {
+            len -= sendLen;
+            ECGP_tx_fifo.out += sendLen;
+            //reset tx fifo full flag   
+            ECGP_tx_fifo.full = ECGP_FALSE;
+        }
+        else {
+            ECGP_tx_fifo.out = (out+len) % ECGP_LINK_TX_FIFO_LEN;
+            //reset tx fifo full flag   
+            ECGP_tx_fifo.full = ECGP_FALSE;
+            if (ECGP_tx_fifo.out == in) {
+                ECGP_tx_fifo.empty = ECGP_TRUE;
+                return 0;
+            }
+            else{
+                return link_hasSent(0);
+            }
+        }       
+    }
+    
+    //call phy function to send
+    res = ECGP_physicalSend(&ECGP_tx_fifo.buf[ECGP_tx_fifo.out], len);
+	if (ECGP_tx_callback != NULL) {
+		ECGP_tx_callback(sendLen);
+	}
+    if( res == ECGP_ENONE ){
+        return len;
+    }
+    return res;
+}
+/**********************************************************************
+* Description:  Only used by network layer.
+                Send data
+* Input:        data address,length of sent data
+* Return:       error code
+**********************************************************************/
+ECGP_error ECGP_linkSend(u8* data, u16 len)
+{
+    ECGP_error res;
+    res = link_frame(data,len);
+    if(res != ECGP_ENONE){
+        return res;
+    }
+    res = link_hasSent(0);
+    if (res < 0) {
+        return res;
+    }
+    return ECGP_ENONE;
+}
+/**********************************************************************
+* Description:  Only used by network layer.
+                Reveive data.
+* Input:        data address,length of sent data
+* Return:       error code
+**********************************************************************/
+ECGP_error ECGP_linkRecv(u8* data, u16 len)
+{
+    ECGP_error res;
+    res = link_verfy(data,len);
+    if(res != ECGP_ENONE){
+        return res;
+    }
+}
 
+/**********************************************************************
+* Description:  initialize link layer.
+* Input:        none
+* Return:       none
+**********************************************************************/
+void ECGP_linkInit(void)
+{
+    ECGP_rx_fifo.buf = _rx_fifo;
+    ECGP_tx_fifo.buf = _tx_fifo;
 
+    link_frameBuf[0] = ECGP_END;
+    link_frameBuf[1] = ECGP_END;
 
+    ECGP_rx_fifo.in = 0;
+    ECGP_rx_fifo.out = 0;
+    ECGP_rx_fifo.full = ECGP_FALSE;
+    ECGP_rx_fifo.empty = ECGP_TRUE;
 
-
-
-
-
-
+    ECGP_tx_fifo.in = 0;
+    ECGP_tx_fifo.out = 0;
+    ECGP_tx_fifo.full = ECGP_FALSE;
+    ECGP_tx_fifo.empty = ECGP_TRUE;
+    link_hasReceived(0);
+}
 
 
 
