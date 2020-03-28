@@ -17,21 +17,25 @@
 #define TRANS_SEQ_MASK          0X7Fu
 #define TRANS_CRC_INIT          0XFFFFu
 
+typedef struct {
+	u16		in;
+	u8		buf[ECGP_TRANS_LEN_MAX];
+}Transport_interMsgTypeDef;
 
 typedef struct TransTx_node {
 	ECGP_Node_t* node;
-	int timeout;
-	u16 len;
-	u8 resend;
-	u8 buf[ECGP_TRANS_LEN_MAX]; 
+	int		timeout;
+	u16		len;
+	u8		resend;
+	u8		buf[ECGP_TRANS_LEN_MAX]; 
 }TransTx_node_t;
 
 static ECGP_List_t txFreeList, waitAckList, sendList;
 
-static u8 trans_rx_buffer[ECGP_TRANS_LEN_MAX];
-static TransTx_node_t trans_tx_node[ECGP_TRANS_REBUF_MAX];
-static u8  sequence=0;
-
+static u8							trans_rx_buffer[ECGP_TRANS_LEN_MAX];
+static u8							sequence = 0;
+static TransTx_node_t				trans_tx_node[ECGP_TRANS_REBUF_MAX];
+static Transport_interMsgTypeDef	interMsg;
 
 /*
     BIT7        BIT6~0
@@ -39,17 +43,23 @@ static u8  sequence=0;
  */
 /**********************************************************************
 * Description:  only used by transport layer.
-                send ack package to network layer. 
+                save ack package in inter message buffer. 
 * Input:        sequence number
 * Return:       error code
 **********************************************************************/
 static ECGP_error transport_sendAck(u8 seq)
 {
-    u8 temp[2];
-    temp[0] = seq|(~TRANS_SEQ_MASK);
-    temp[1] = 0xffu - temp[0];
-    //send to network lager
-    return ECGP_networkSend(temp,2);
+	seq |= (~TRANS_SEQ_MASK);
+	_ECGP_ENTER_CRITICAL;
+	if ((interMsg.in + 1) < ECGP_TRANS_LEN_MAX) {
+		interMsg.buf[(interMsg.in)++] = seq;
+		interMsg.buf[(interMsg.in)++] = 0xffu - seq;
+		return ECGP_ENONE;
+	}
+	else {
+		return -ECGP_EMEMOUT;
+	}
+	_ECGP_LEAVE_CRITICAL;
 }
 /**********************************************************************
 * Description:  only used by transport layer.
@@ -132,16 +142,25 @@ static void transport_pendSending(TransTx_node_t *unit)
 **********************************************************************/
 static ECGP_error transport_sendToNetwork(void)
 {
-	ECGP_error res;
+	ECGP_error res = ECGP_ENONE;
 	TransTx_node_t* unit;
-	
-	while (true) 
+
+	_ECGP_ENTER_CRITICAL;
+	if (interMsg.in != 0) {
+		res = ECGP_networkSend(interMsg.buf, interMsg.in);
+		if (res == ECGP_ENONE) {
+			interMsg.in = 0;
+		}		
+	}
+	_ECGP_LEAVE_CRITICAL;
+
+	while (res == ECGP_ENONE)
 	{
 		_ECGP_ENTER_CRITICAL;	
 		unit = (TransTx_node_t*)ECGP_listGetFirstNode(&sendList);
 		_ECGP_LEAVE_CRITICAL;
 		if (unit == NULL) {
-			return ECGP_ENONE;
+			break;
 		}
 
 		res = ECGP_networkSend(unit->buf, unit->len);
@@ -151,12 +170,12 @@ static ECGP_error transport_sendToNetwork(void)
 			ECGP_listAddNode(&waitAckList, &unit->node);
 			_ECGP_LEAVE_CRITICAL;
 		}
-		else if (res == -ECGP_EFULL) {
-			return ECGP_ENONE;
-		}
-		else {
-			return res;
-		}
+	}
+	if (res == -ECGP_EFULL) {
+		return ECGP_ENONE;
+	}
+	else {
+		return res;
 	}
 }
 
@@ -220,24 +239,33 @@ u8 seqPre;
 ECGP_error ECGP_transportRecv(u8* data, u16 len)
 {
     ECGP_error readLen;
-    u16 crc,crc_recv;
+    u16 crc,crc_recv,i;
 	u8 seqRecv;
     readLen = ECGP_networkRecv(trans_rx_buffer,ECGP_TRANS_LEN_MAX);
-    if( readLen <= 0){
+    if( readLen == 0){
+		if (interMsg.in != 0) {
+			transport_invokeElapse();
+		}
         return readLen;
-    }else if(readLen < 2){
-        return 0;
+    }
+	else if (readLen < 0) {
+		return readLen;
+	}
+	else if(readLen < 2){
+		return ECGP_transportRecv(data, len);
     }
 
 	seqRecv = trans_rx_buffer[0];
     // is ack
     if(seqRecv & (~TRANS_SEQ_MASK)){
-        if(seqRecv +trans_rx_buffer[1] == 0xff){
-            transport_removeAckWaiting( seqRecv&TRANS_SEQ_MASK );
-        }
-        else{
-            // ignore
-        }
+		for (i = 0; i < readLen; i += 2) {
+			if(trans_rx_buffer[i] +trans_rx_buffer[i+1] == 0xff){
+				transport_removeAckWaiting(trans_rx_buffer[i]&TRANS_SEQ_MASK );
+			}
+			else{
+				// ignore
+			}
+		}
         //check if there is any data left
         return ECGP_transportRecv(data,len);
     }
@@ -267,10 +295,6 @@ ECGP_error ECGP_transportRecv(u8* data, u16 len)
 	else {
 		return ECGP_transportRecv(data, len);
 	}
-
-		   
-
-    
 }
 
 /**********************************************************************
@@ -329,6 +353,8 @@ void ECGP_transportInit(void)
 	//init other list
 	ECGP_listClear(&waitAckList);
 	ECGP_listClear(&sendList);
+
+	interMsg.in = 0;
 }
 
 
