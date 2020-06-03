@@ -37,13 +37,14 @@ inline static void link_rx_fifo_out_increase(void)
 
 
 
-
-/**********************************************************************
-* Description:  only used by link layer.
-                write data into frame buffer. 
-* Input:        data pointer, data length, index of start 
-* Return:      current index
-**********************************************************************/
+/**
+* @brief        only used by link layer.
+*               write data into frame buffer. 
+* @param[in] data   pointer to what will be writen into encode buffer.
+* @param[in] len    length of data
+* @param[in] index  index of start
+* @return       current index
+*/
 static u16 link_writeBuf(u8* data , u16 len ,u16 index)
 {
     u16 i;
@@ -64,11 +65,8 @@ static u16 link_writeBuf(u8* data , u16 len ,u16 index)
     }
     return index;
 }
-/**********************************************************************
-* Description:  only used by link layer.
-* Input:        sequence number
-* Return:       error code
-**********************************************************************/
+
+
 static ECGP_error link_writeRxfifo(u8* src, u16 len)
 {
     u16 i;
@@ -76,13 +74,13 @@ static ECGP_error link_writeRxfifo(u8* src, u16 len)
 
     }
 }
-/**********************************************************************
-* Description:  only used by link layer.
-                write frame data into transmit buffer . 
-                tx buffer is used for sending.
-* Input:        data length
-* Return:       error code
-**********************************************************************/
+/**
+* @brief        only used by link layer.
+*               write encode frame data into transmit buffer .
+*               tx buffer is used for sending.
+* @param[in] len  length of sending data.
+* @return         error code
+*/
 static ECGP_error link_writeTxfifo(u16 len)
 {
     u16 i,len_remain;
@@ -124,13 +122,15 @@ static ECGP_error link_writeTxfifo(u16 len)
     return ECGP_ENONE;
 
 } 
-/**********************************************************************
-* Description:  Only used by link layer.
-                Pack data pointed by src with link layer frame. 
-                Write into tx buffer.
-* Input:        date pointer, data length 
-* Return:       error code
-**********************************************************************/
+
+/**
+* @brief    Only used by link layer.
+*           Pack data pointed by src with link layer frame. 
+*           Write into tx buffer.
+* @param[in] src     pointer to what received from upper layer.
+* @param[in] len     length of data
+* @return    error code
+*/
 static ECGP_error link_frame( u8* src,  u16 len )
 {
     u16 i,index;
@@ -148,13 +148,13 @@ static ECGP_error link_frame( u8* src,  u16 len )
     return link_writeTxfifo(index);
 }
 
-
-/**********************************************************************
-* Description:  Only used by link layer.
-                Unpack data from link layer frame.
-* Input:        pointer of stashing address, receive buffer size
-* Return:       length of read data
-**********************************************************************/
+/**
+* @brief    Only used by link layer.
+*           Unpack data from link layer frame.
+* @param[in] dst     pointer to what received from under layer.
+* @param[in] len     length of data
+* @return    length of read data
+*/
 static u16 link_parse( u8* dst, u16 len )
 {
     u16 cnt=0;
@@ -196,14 +196,16 @@ static u16 link_parse( u8* dst, u16 len )
     return cnt;
     
 
-}
-/**********************************************************************
-* Description:  only used by link layer.
-                Read rx buffer and verify data.
-                write unpacked data into buffer pointed by dst.
-* Input:        stashing data buffer, buffer length
-* Return:       error code
-**********************************************************************/
+} 
+
+/**
+* @brief   only used by link layer.
+*          Read rx buffer and verify data.
+*          write unpacked data into buffer pointed by dst.
+* @param[in] dst    pointer to buffer which will stash decoded data.
+* @param[in] len    length of buffer
+* @return     error code
+*/
 static ECGP_error link_verfy(u8* dst, u16 len)
 {
     u8 temp[2];
@@ -261,13 +263,14 @@ static ECGP_error link_verfy(u8* dst, u16 len)
     ECGP_rx_fifo.out = rx_fifo_out;
     return len_recv;
 }
-/**********************************************************************
-* Description:  Used by physical layer.
-                Check if rx fifo is full.
-                If not, call pyh function to receive.
-* Input:        length of received data
-* Return:       length of fifo remaining data or error code
-**********************************************************************/
+
+/**
+* @brief    Used by physical layer.
+*           Check if rx fifo is full.
+*           If not, call pyh function to receive.
+* @param[in] recvLen    length of received data
+* @return   error code
+*/
 ECGP_error link_hasReceived(u16 recvLen)
 {
     ECGP_error res;
@@ -320,13 +323,14 @@ ECGP_error link_hasReceived(u16 recvLen)
     }
     return res;
 }
-/**********************************************************************
-* Description:  Used by physical layer.
-                Update tx fifo output index.
-                if need to send other data, call pyh function.
-* Input:        length of sent data
-* Return:       length of next sending data or error code
-**********************************************************************/
+
+/**
+* @brief    Used by physical layer.
+*           Update tx fifo output index.
+*           if need to send other data, call pyh function.
+* @param[in] sendLen    length of sending data
+* @return   error code
+*/
 ECGP_error link_hasSent(u16 sendLen)
 {
     ECGP_error res;
@@ -377,12 +381,14 @@ ECGP_error link_hasSent(u16 sendLen)
     }
     return res;
 }
-/**********************************************************************
-* Description:  Only used by network layer.
-                Send data
-* Input:        data address,length of sent data
-* Return:       error code
-**********************************************************************/
+
+/**
+* @brief    Only used by network layer..
+*           Send data
+* @param[in] data    pointer to sending data
+* @param[in] len     length of data
+* @return   error code
+*/
 ECGP_error ECGP_linkSend(u8* data, u16 len)
 {
     ECGP_error res;
@@ -396,12 +402,14 @@ ECGP_error ECGP_linkSend(u8* data, u16 len)
     }
     return ECGP_ENONE;
 }
-/**********************************************************************
-* Description:  Only used by network layer.
-                Reveive data.
-* Input:        data address,length of sent data
-* Return:       error code
-**********************************************************************/
+
+/**
+* @brief    Only used by network layer..
+*           Reveive data.
+* @param[in] data    pointer to buffer which will stash decoded data.
+* @param[in] len     length of buffer
+* @return   error code
+*/
 ECGP_error ECGP_linkRecv(u8* data, u16 len)
 {
     ECGP_error res;
@@ -411,11 +419,10 @@ ECGP_error ECGP_linkRecv(u8* data, u16 len)
     }
 }
 
-/**********************************************************************
-* Description:  initialize link layer.
-* Input:        none
-* Return:       none
-**********************************************************************/
+/**
+* @brief    initialize link layer.
+* @return   none
+*/
 void ECGP_linkInit(void)
 {
     ECGP_rx_fifo.buf = _rx_fifo;

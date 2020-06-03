@@ -1,0 +1,4 @@
+﻿  main.c
+D:\Develop\git\ECGP\simulate\Windows\src\main.c(37,20): warning C4013: “ECGP_setTxCallback”未定义；假设外部返回 int
+D:\Develop\git\ECGP\simulate\Windows\src\main.c(53,36): warning C4267: “函数”: 从“size_t”转换到“u16”，可能丢失数据
+  Windows.vcxproj -> D:\Develop\git\ECGP\simulate\Windows\Debug\Windows.exe

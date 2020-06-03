@@ -96,8 +96,15 @@ const u32 ECGP_crc32_table[256] = {
 };
 #endif
 
-
-
+/**
+* @brief        Calculate the value of CRC8.
+*               If @ECGP_USE_CRC8_TABLE is defined, it will use an array to increase computing speed.
+*               However, it will also take up more space.
+* @param[in] data    Pointer to data which will be included.
+* @param[in] len     Length of data
+* @param[in] init    Initial value
+* @return       CRC8
+*/
 u8  ECGP_crc8(u8* data, u32 len , u8 init)
 {
 #ifndef ECGP_USE_CRC8_TABLE
@@ -109,15 +116,16 @@ u8  ECGP_crc8(u8* data, u32 len , u8 init)
     crc = init;
 
 #ifndef ECGP_USE_CRC8_TABLE
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; i++) 
+    {
         crc ^= data[i];
-        for (j = 0; j < 8; j++) {
+        for (j = 0; j < 8; j++) 
+        {
             if (crc & 0x80u) {
                 crc <<= 1;
                 crc ^= ECGP_CRC8_POLY;
             }
-            else
-            {
+            else{
                 crc <<= 1;
             }
         }
@@ -131,6 +139,15 @@ u8  ECGP_crc8(u8* data, u32 len , u8 init)
     return crc;
 }
 
+/**
+* @brief        Calculate the value of CRC16.
+*               If @ECGP_USE_CRC16_TABLE is defined, it will use an array to increase computing speed.
+*               However, it will also take up more space.
+* @param[in] data    Pointer to data which will be included.
+* @param[in] len     Length of data
+* @param[in] init    Initial value
+* @return       CRC16
+*/
 u16 ECGP_crc16(u8* data, u32 len , u16 init) 
 {
 #ifndef ECGP_USE_CRC16_TABLE
@@ -140,19 +157,19 @@ u16 ECGP_crc16(u8* data, u32 len , u16 init)
     u16 crc;
     crc = init;
 #ifndef ECGP_USE_CRC16_TABLE
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; i++) 
+    {
         crc ^= (data[i]<<8);
-        for (j = 0; j < 8; j++) {
+        for (j = 0; j < 8; j++) 
+        {
             if (crc & 0x8000u) {
                 crc <<= 1;
                 crc ^= ECGP_CRC16_POLY;
             }
-            else
-            {
+            else {
                 crc <<= 1;
             }
         }
-
     }
 #else
     while(len--) {
@@ -164,6 +181,15 @@ u16 ECGP_crc16(u8* data, u32 len , u16 init)
     return crc;
 }
 
+/**
+* @brief        Calculate the value of CRC32.Calculate the value of CRC16.
+*               If @ECGP_USE_CRC32_TABLE is defined, it will use an array to increase computing speed.
+*               However, it will also take up more space.
+* @param[in] data    Pointer to data which will be included.
+* @param[in] len     Length of data
+* @param[in] init    Initial value
+* @return       CRC32
+*/
 u32 ECGP_crc32(u8* data, u32 len ,u32 init)
 {
 #ifndef ECGP_USE_CRC32_TABLE
@@ -174,15 +200,16 @@ u32 ECGP_crc32(u8* data, u32 len ,u32 init)
 
     crc = init;
 #ifndef ECGP_USE_CRC32_TABLE
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; i++) 
+    {
         crc ^= (data[i]<<24);
-        for (j = 0; j < 8; j++) {
+        for (j = 0; j < 8; j++) 
+        {
             if (crc & 0x80000000u) {
                 crc <<= 1;
                 crc ^= ECGP_CRC32_POLY;
             }
-            else
-            {
+            else{
                 crc <<= 1;
             }
         }

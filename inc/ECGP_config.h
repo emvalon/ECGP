@@ -13,8 +13,8 @@
 
 /*
  *************************************************
- * Using crc tabel can improve the compute speed.
- * The other hand, it will take more space.
+ * Using crc tabel can improve the computing speed.
+ * The other hand, it will take up more space.
  *************************************************
  */
 
