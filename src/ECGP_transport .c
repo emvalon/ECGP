@@ -156,7 +156,7 @@ static ECGP_error transport_sendToNetwork(void)
 	_ECGP_LEAVE_CRITICAL;
 
 	while (res == ECGP_ENONE)
-	{
+	{ 
 		_ECGP_ENTER_CRITICAL;	
 		unit = (TransTx_node_t*)ECGP_listGetFirstNode(&sendList);
 		_ECGP_LEAVE_CRITICAL;

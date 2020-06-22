@@ -19,7 +19,7 @@
 // Transport layer buffer maximum length
 #define ECGP_TRANS_LEN_MAX      (ECGP_PRESENT_LEN_MAX + 3)
 //ack timeout value(MS)
-#define ECGP_TRANS_NOACK_TIMEOUT    1000
+#define ECGP_TRANS_NOACK_TIMEOUT    100
 //ack timeout resend times
 #define ECGP_TRANS_NOACK_RESEND     5
 //Resend buffer max number
