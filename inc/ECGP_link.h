@@ -15,7 +15,7 @@
 #include "ECGP_physical.h" 
 #include "ECGP_common.h"
 
-#define LINK_CRC_INIT         0xffffffff
+#define LINK_CRC_INIT         0xffffu
 #define ECGP_LINK_LEN_MAX    (2*(ECGP_NET_LEN_MAX+4)+3)
 
 //定义fifo大小

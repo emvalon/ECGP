@@ -34,7 +34,7 @@ int main()
 
 	ECGP_init();
     ECGP_setRxCallback(rx_cb);
-	ECGP_setTxCallback(tx_cb);
+    ECGP_setTxCallback(tx_cb);
     p = malloc(102);
    
    
@@ -50,7 +50,7 @@ int main()
         memset(p, 0, 102);
         printf("\ninput your message :");
         scanf_s("%s",p,102);
-        res = ECGP_send(p,strlen(p));
+        res = ECGP_send(p,(u16)strlen(p));
         if (res != ECGP_ENONE) {
             printf("send fault :%d\n", res);
         }

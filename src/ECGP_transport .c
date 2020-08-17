@@ -23,7 +23,7 @@ typedef struct {
 }Transport_interMsgTypeDef;
 
 typedef struct TransTx_node {
-	ECGP_Node_t* node;
+	ECGP_Node_t node;
 	u32		timeout;
 	u16		len;
 	u8		resend;
@@ -68,7 +68,6 @@ static ECGP_error transport_sendAck(u8 seq)
 */
 static void transport_removeAckWaiting(u8 seq)
 { 
-	u8 i;
 	TransTx_node_t* buffer;
 
 	_ECGP_ENTER_CRITICAL;
@@ -93,7 +92,7 @@ static void transport_removeAckWaiting(u8 seq)
 */
 static void transport_setAckWaiting(TransTx_node_t* unit)
 {
-	ECGP_listAddNode(&waitAckList, unit->node);
+	ECGP_listAddNode(&waitAckList, &unit->node);
 	unit->timeout = ECGP_TRANS_NOACK_TIMEOUT;
 	unit->resend  = ECGP_TRANS_NOACK_RESEND;
 }
@@ -188,7 +187,7 @@ ECGP_error ECGP_transportSend(u8* data, u16 len)
     u8  seq;
     
 	_ECGP_ENTER_CRITICAL;
-	freeNode = ECGP_listPopFirstNode(&txFreeList);
+	freeNode = (TransTx_node_t*)ECGP_listPopFirstNode(&txFreeList);
 	_ECGP_LEAVE_CRITICAL;
     if (freeNode == NULL) {
         return -ECGP_EFULL;
@@ -333,7 +332,7 @@ ECGP_error ECGP_transportElapsed(int time)
 					//current time is the largest. 
 				}
 			}
-			unit = ECGP_listGetNextNode(&unit->node);
+			unit = (TransTx_node_t*)ECGP_listGetNextNode(&unit->node);
 		}
 		_ECGP_LEAVE_CRITICAL;
 		elapsedTime = 0;

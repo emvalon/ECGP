@@ -24,6 +24,7 @@ ECGP_error ECGP_recv(u8* data, u16 len);
 ECGP_error ECGP_timeElapsed(int time);
 
 void ECGP_setRxCallback(link_callback_typedef fun);
+void ECGP_setTxCallback(link_callback_typedef fun);
 void ECGP_init(void);
 
 

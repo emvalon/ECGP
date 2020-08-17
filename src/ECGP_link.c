@@ -16,8 +16,9 @@
 #include "string.h"
 
 
-static u8 link_frameBuf[ECGP_LINK_LEN_MAX];
+static u8  link_frameBuf[ECGP_LINK_LEN_MAX];
 static u16 rx_fifo_out;
+static u16 frameIndex;
 
 
 
@@ -39,13 +40,14 @@ inline static void link_rx_fifo_out_increase(void)
 
 /**
 * @brief        only used by link layer.
-*               write data into frame buffer. 
+*               Encode data with SLIP style.
+*               write the data into frame buffer. 
 * @param[in] data   pointer to what will be writen into encode buffer.
 * @param[in] len    length of data
 * @param[in] index  index of start
 * @return       current index
 */
-static u16 link_writeBuf(u8* data , u16 len ,u16 index)
+static u16 link_encode(u8* data , u16 len ,u16 index)
 {
     u16 i;
 
@@ -83,8 +85,9 @@ static ECGP_error link_writeRxfifo(u8* src, u16 len)
 */
 static ECGP_error link_writeTxfifo(u16 len)
 {
-    u16 i,len_remain;
+    u16 len_remain;
     u16 in,out;
+    u16 index;
  
     if (ECGP_tx_fifo.full)  
     {
@@ -109,7 +112,7 @@ static ECGP_error link_writeTxfifo(u16 len)
         memcpy(&ECGP_tx_fifo.buf[in],link_frameBuf,len );
     }
     else{
-        u16 index = ECGP_LINK_TX_FIFO_LEN-in;
+        index = ECGP_LINK_TX_FIFO_LEN-in;
         memcpy(&ECGP_tx_fifo.buf[in], link_frameBuf, index );
         memcpy(ECGP_tx_fifo.buf, &link_frameBuf[index], len-index );
     }
@@ -120,7 +123,6 @@ static ECGP_error link_writeTxfifo(u16 len)
     }
     ECGP_tx_fifo.empty = ECGP_FALSE;
     return ECGP_ENONE;
-
 } 
 
 /**
@@ -133,19 +135,40 @@ static ECGP_error link_writeTxfifo(u16 len)
 */
 static ECGP_error link_frame( u8* src,  u16 len )
 {
-    u16 i,index;
+    ECGP_error err;
     u16 crc;
     u8 temp[4];
 
+    if (frameIndex > 1) {
+        err = link_writeTxfifo(frameIndex);
+        if (err != ECGP_ENONE) {
+            return err;
+        }
+        else {
+            //write previous message into TX fifo successfully        
+        }
+    }
+    else{
+        //no previous message needs to be sent
+    }
+    
     crc = ECGP_crc16(src,len,LINK_CRC_INIT);
     ECGP_SET_U16(temp,len);
     ECGP_SET_U16(temp+2,crc);
+    frameIndex = link_encode(temp,sizeof(temp),1);
+    frameIndex = link_encode(src,len, frameIndex);
+    link_frameBuf[frameIndex++] = ECGP_END;
+    link_frameBuf[frameIndex++] = ECGP_END;
 
-    index = link_writeBuf(temp,sizeof(temp),2);
-    index = link_writeBuf(src,len,index);
-    link_frameBuf[index++] = ECGP_END;
-
-    return link_writeTxfifo(index);
+    err = link_writeTxfifo(frameIndex);
+    if (err == ECGP_ENONE) {
+        frameIndex = 1;
+    }
+    else {
+        //save the value of frameIndex.
+        //resend in the next attempt.
+    }
+    return err;
 }
 
 /**
@@ -412,11 +435,7 @@ ECGP_error ECGP_linkSend(u8* data, u16 len)
 */
 ECGP_error ECGP_linkRecv(u8* data, u16 len)
 {
-    ECGP_error res;
-    res = link_verfy(data,len);
-    if(res != ECGP_ENONE){
-        return res;
-    }
+    return link_verfy(data,len);
 }
 
 /**
@@ -428,17 +447,17 @@ void ECGP_linkInit(void)
     ECGP_rx_fifo.buf = _rx_fifo;
     ECGP_tx_fifo.buf = _tx_fifo;
 
+    frameIndex = 1;
     link_frameBuf[0] = ECGP_END;
-    link_frameBuf[1] = ECGP_END;
 
-    ECGP_rx_fifo.in = 0;
-    ECGP_rx_fifo.out = 0;
-    ECGP_rx_fifo.full = ECGP_FALSE;
+    ECGP_rx_fifo.in    = 0;
+    ECGP_rx_fifo.out   = 0;
+    ECGP_rx_fifo.full  = ECGP_FALSE;
     ECGP_rx_fifo.empty = ECGP_TRUE;
 
-    ECGP_tx_fifo.in = 0;
-    ECGP_tx_fifo.out = 0;
-    ECGP_tx_fifo.full = ECGP_FALSE;
+    ECGP_tx_fifo.in    = 0;
+    ECGP_tx_fifo.out   = 0;
+    ECGP_tx_fifo.full  = ECGP_FALSE;
     ECGP_tx_fifo.empty = ECGP_TRUE;
     link_hasReceived(0);
 }

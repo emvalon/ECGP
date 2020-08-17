@@ -99,7 +99,6 @@ void ECGP_listAddNodeFront(ECGP_List_t* list, ECGP_Node_t* newNode)
 
 void ECGP_listDeleteNode(ECGP_List_t *list, ECGP_Node_t *node)
 {
-	u32 i;
 	ECGP_Node_t *preNode;
 
 	preNode = list;
