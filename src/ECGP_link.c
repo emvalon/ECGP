@@ -10,7 +10,7 @@
 */
 
 #include "ECGP_link.h"
-#include "ECGP_physical.h"
+#include "ECGP_porting.h"
 #include "ECGP_config.h"
 #include "ECGP_crc.h"
 #include "string.h"

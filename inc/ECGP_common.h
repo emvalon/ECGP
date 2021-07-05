@@ -1,12 +1,14 @@
 /**
-  ******************************************************************************
-  * File Name          : ECGP_common.h
-  * Description        : ECGP common macro
-  ******************************************************************************
-
-  * Copyright(c) 2019 Valon Shen (valonshen@foxmail.com)
-  * All rights reserved.
-*/
+ * @file ECGP_common.h
+ * @author Weilong Shen (valonshen@foxmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2021-07-05
+ * 
+ * Copyright © 2019-2021 Weilong Shen (valonshen@foxmail.com).
+ * All rights reserved.
+ * 
+ */
 
 #ifndef _ECGP_COMMON_H_
 #define _ECGP_COMMON_H_
@@ -15,7 +17,7 @@
 typedef  unsigned long  u32;
 typedef  unsigned short u16;
 typedef  unsigned char  u8;
-typedef  long     ECGP_error;
+typedef  int     ECGP_error;
 
 
 enum{
@@ -45,9 +47,4 @@ typedef void(*link_callback_typedef)(u16 num);
                                     *ECGP_POINT_U8(add)       = data&0xffu;        \
                                     *(ECGP_POINT_U8(add)+1)   = (data>>8)&0xffu;   \
                                 }while(0)
-
-
-
-
-
 #endif

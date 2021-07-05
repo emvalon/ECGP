@@ -12,7 +12,7 @@
 #define _ECGP_LINK_H_
 
 #include "ECGP_network.h"
-#include "ECGP_physical.h" 
+#include "ECGP_porting.h" 
 #include "ECGP_common.h"
 
 #define LINK_CRC_INIT         0xffffu
