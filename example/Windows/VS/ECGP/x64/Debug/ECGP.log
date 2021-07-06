@@ -1,0 +1,19 @@
+﻿  ECGP_application.c
+D:\Develop\git\ECGP\src\ECGP_application.c(11,10): fatal error C1083: 无法打开包括文件: “ECGP_application.h”: No such file or directory
+  ECGP_crc.c
+D:\Develop\git\ECGP\src\ECGP_crc.c(11,10): fatal error C1083: 无法打开包括文件: “ECGP_crc.h”: No such file or directory
+  ECGP_link.c
+D:\Develop\git\ECGP\src\ECGP_link.c(12,10): fatal error C1083: 无法打开包括文件: “ECGP_link.h”: No such file or directory
+  ECGP_list.c
+D:\Develop\git\ECGP\src\ECGP_list.c(10,10): fatal error C1083: 无法打开包括文件: “ECGP_list.h”: No such file or directory
+  ECGP_network.c
+D:\Develop\git\ECGP\src\ECGP_network.c(11,10): fatal error C1083: 无法打开包括文件: “ECGP_network.h”: No such file or directory
+  ECGP_presentation.c
+D:\Develop\git\ECGP\src\ECGP_presentation.c(11,10): fatal error C1083: 无法打开包括文件: “ECGP_presentation.h”: No such file or directory
+  ECGP_transport .c
+D:\Develop\git\ECGP\src\ECGP_transport .c(11,10): fatal error C1083: 无法打开包括文件: “ECGP_transport .h”: No such file or directory
+  simulate.c
+D:\Develop\git\ECGP\src\port\simulate.c(12,10): fatal error C1083: 无法打开包括文件: “ECGP_link.h”: No such file or directory
+  main.c
+D:\Develop\git\ECGP\example\Windows\main.c(13,10): fatal error C1083: 无法打开包括文件: “ECGP.h”: No such file or directory
+  正在生成代码...
