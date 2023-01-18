@@ -1,0 +1,1 @@
+export ECGP_ROOT_PATH=$(pwd)
