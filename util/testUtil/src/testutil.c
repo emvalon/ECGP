@@ -102,6 +102,12 @@ tu_fail_cb_self(const char *msg, void *arg)
 void
 tu_init(void)
 {
+    tu_any_failed = 0;
     tu_set_pass_cb(tu_pass_cb_self, NULL);
     tu_set_fail_cb(tu_fail_cb_self, NULL);
+}
+
+int tu_all_case_passed(void)
+{
+    return !tu_any_failed;
 }

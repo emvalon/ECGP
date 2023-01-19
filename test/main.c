@@ -25,7 +25,7 @@
 void test_mempoolRegister(void);
 void test_mempchainRegister(void);
 
-int main(void)
+int main(int argc, char *arg[])
 {
     tu_init();
     
@@ -35,5 +35,9 @@ int main(void)
 
     tu_suit_run();
 
-    return 0;
+    if (tu_all_case_passed()) {
+        return 0;
+    } else {
+        return -1;
+    }
 }

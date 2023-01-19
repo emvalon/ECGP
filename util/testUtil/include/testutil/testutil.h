@@ -126,6 +126,7 @@ void tu_pre_test(void);
 void tu_post_test(void);
 
 void tu_init(void);
+int  tu_all_case_passed(void);
 
 extern struct tu_config tu_config;
 
