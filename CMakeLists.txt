@@ -13,7 +13,7 @@ include_directories(
 AUX_SOURCE_DIRECTORY(${ROOT_PATH}/src/core DIR_SRCS)
 AUX_SOURCE_DIRECTORY(${ROOT_PATH}/src/misc MISC_SRCS)
 
-list(APPEND SRC
+list(APPEND ECGP_SRC
     # ${DIR_SRCS}
     ${MISC_SRCS}
 )
